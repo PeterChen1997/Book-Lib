@@ -5,5 +5,6 @@ dist
 *.log
 *.md
 .env*
-data/*.db
-server/uploads/*
+# 不再忽略数据目录，确保 SQLite 数据库和上传文件能被打包进镜像
+# data/*.db
+# server/uploads/*

@@ -112,16 +112,20 @@ const BookCard = ({ book, onClick, isBatchMode, isSelected, onToggleSelect }) =>
               return <Star key={i} size={10} fill={i < displayRating ? "currentColor" : "none"} />;
             })}
           </div>
-          {book.recommendation && (
-            <span className={cn(
-              "text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter",
-              book.recommendation === '力荐' ? "bg-red-500 text-white" :
-              book.recommendation === '推荐' ? "bg-green-500 text-white" :
-              "bg-muted text-muted-foreground"
-            )}>
-              {book.recommendation}
-            </span>
-          )}
+          <div className="flex items-center gap-1 flex-wrap justify-end">
+            {/* 用户评分 >= 9 显示力荐 */}
+            {book.userRating >= 9 && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-sm">
+                🔥力荐
+              </span>
+            )}
+            {/* 豆瓣评分 >= 9 显示好书 */}
+            {book.rating >= 9 && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-gradient-to-r from-amber-500 to-yellow-500 text-white shadow-sm">
+                ⭐好书
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>

@@ -4,13 +4,17 @@ const multer = require('multer');
 const path = require('path');
 const cors = require('cors');
 const fs = require('fs');
+const https = require('https');
 
 const app = express();
 const port = 3001;
 
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'server/uploads')));
+
+// 静态文件服务（生产环境 - 服务 dist 目录）
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // --- 数据库初始化 ---
 const db = new Database('data/library.db');
@@ -20,7 +24,7 @@ db.exec(`
     title TEXT NOT NULL,
     author TEXT NOT NULL,
     readingDate TEXT,
-    status TEXT DEFAULT '想读',
+    status TEXT DEFAULT '已读',
     rating INTEGER DEFAULT 5,
     summary TEXT,
     review TEXT,
@@ -28,8 +32,42 @@ db.exec(`
     coverUrl TEXT,
     readingProgress INTEGER DEFAULT 0,
     totalPages INTEGER DEFAULT 0,
-    fileUrl TEXT
+    fileUrl TEXT,
+    userRating REAL,
+    recommendation TEXT
   )
+`);
+
+// --- 数据库迁移系统 ---
+db.exec(`
+  CREATE TABLE IF NOT EXISTS migrations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// Migration 2: Add userRating and recommendation if they don't exist
+const tableInfo = db.prepare("PRAGMA table_info(books)").all();
+if (!tableInfo.find(c => c.name === 'userRating')) {
+  db.exec("ALTER TABLE books ADD COLUMN userRating REAL");
+}
+if (!tableInfo.find(c => c.name === 'recommendation')) {
+  db.exec("ALTER TABLE books ADD COLUMN recommendation TEXT");
+}
+
+const runMigration = (name, sql) => {
+  const migration = db.prepare('SELECT * FROM migrations WHERE name = ?').get(name);
+  if (!migration) {
+    console.log(`Running migration: ${name}`);
+    db.exec(sql);
+    db.prepare('INSERT INTO migrations (name) VALUES (?)').run(name);
+  }
+};
+
+// Migration 001: 将所有“想读”状态变更为“已读”
+runMigration('001_remove_want_to_read', `
+  UPDATE books SET status = '已读' WHERE status = '想读';
 `);
 
 db.exec(`
@@ -55,6 +93,49 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage });
+
+// --- 图片本地化工具 ---
+const downloadImage = (url, dest) => {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(dest);
+    const options = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Referer': 'https://book.douban.com/'
+      }
+    };
+    https.get(url, options, (response) => {
+      if (response.statusCode !== 200) {
+        reject(new Error(`Failed to download: ${response.statusCode}`));
+        return;
+      }
+      response.pipe(file);
+      file.on('finish', () => {
+        file.close(resolve);
+      });
+    }).on('error', (err) => {
+      reject(err);
+    });
+  });
+};
+
+const ensureLocalCover = async (coverUrl) => {
+  if (coverUrl && coverUrl.startsWith('http')) {
+    const filename = `douban_${Date.now()}_${path.basename(coverUrl)}`;
+    const localPath = path.join(__dirname, 'server/uploads', filename);
+    const dir = path.dirname(localPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    
+    try {
+      await downloadImage(coverUrl, localPath);
+      return `/uploads/${filename}`;
+    } catch (err) {
+      console.error('Cover download failed:', err);
+      return coverUrl; // Fallback to original
+    }
+  }
+  return coverUrl;
+};
 
 // --- 接口实现 ---
 
@@ -85,25 +166,34 @@ app.get('/api/books', (req, res) => {
 });
 
 // 添加书籍
-app.post('/api/books', upload.single('cover'), (req, res) => {
-  const { title, author, readingDate, status, rating, summary, review, quotes, readingProgress, totalPages, fileUrl } = req.body;
-  const coverUrl = req.file ? `/uploads/${req.file.filename}` : (req.body.coverUrl || null);
+app.post('/api/books', upload.single('cover'), async (req, res) => {
+  const { title, author, readingDate, status, rating, summary, review, quotes, readingProgress, totalPages, fileUrl, userRating, recommendation } = req.body;
+  let coverUrl = req.file ? `/uploads/${req.file.filename}` : (req.body.coverUrl || null);
   
+  if (coverUrl && coverUrl.startsWith('http')) {
+    coverUrl = await ensureLocalCover(coverUrl);
+  }
+
   const stmt = db.prepare(`
-    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, fileUrl)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, fileUrl, userRating, recommendation)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
   const quotesStr = typeof quotes === 'string' ? quotes : JSON.stringify(quotes || []);
-  const info = stmt.run(title, author, readingDate, status, rating || 5, summary, review, quotesStr, coverUrl, readingProgress || 0, totalPages || 0, fileUrl);
+  const info = stmt.run(
+    title, author, readingDate, status, rating || 5, summary, review, quotesStr, coverUrl,
+    readingProgress || 0, totalPages || 0, fileUrl,
+    userRating ? parseFloat(userRating) : null,
+    recommendation || null
+  );
   
   res.json({ id: info.lastInsertRowid, success: true });
 });
 
 // 更新书籍
-app.put('/api/books/:id', upload.single('cover'), (req, res) => {
+app.put('/api/books/:id', upload.single('cover'), async (req, res) => {
   const { id } = req.params;
-  const updateFields = ['title', 'author', 'readingDate', 'status', 'rating', 'summary', 'review', 'quotes', 'readingProgress', 'totalPages', 'fileUrl'];
+  const updateFields = ['title', 'author', 'readingDate', 'status', 'rating', 'summary', 'review', 'quotes', 'readingProgress', 'totalPages', 'fileUrl', 'userRating', 'recommendation'];
   const params = [];
   let setClauses = [];
 
@@ -113,7 +203,10 @@ app.put('/api/books/:id', upload.single('cover'), (req, res) => {
       // Handle quotes specifically if it's an array, stringify it
       if (key === 'quotes' && Array.isArray(req.body[key])) {
         params.push(JSON.stringify(req.body[key]));
-      } else {
+      } else if (key === 'userRating') {
+        params.push(req.body[key] ? parseFloat(req.body[key]) : null);
+      }
+      else {
         params.push(req.body[key]);
       }
     }
@@ -122,9 +215,13 @@ app.put('/api/books/:id', upload.single('cover'), (req, res) => {
   if (req.file) {
     setClauses.push(`coverUrl = ?`);
     params.push(`/uploads/${req.file.filename}`);
-  } else if (req.body.coverUrl === null) { // Allow setting coverUrl to null
+  } else if (req.body.coverUrl !== undefined) {
+    let coverUrl = req.body.coverUrl;
+    if (coverUrl && coverUrl.startsWith('http')) {
+      coverUrl = await ensureLocalCover(coverUrl);
+    }
     setClauses.push(`coverUrl = ?`);
-    params.push(null);
+    params.push(coverUrl);
   }
 
   if (setClauses.length === 0) {
@@ -142,6 +239,51 @@ app.put('/api/books/:id', upload.single('cover'), (req, res) => {
 app.delete('/api/books/:id', (req, res) => {
   db.prepare('DELETE FROM books WHERE id = ?').run(req.params.id);
   res.json({ success: true });
+});
+
+// 批量保存书籍 (用于管理员导入)
+app.post('/api/admin/batch-save', async (req, res) => {
+  const { books } = req.body;
+  
+  if (!books || !Array.isArray(books)) {
+    return res.status(400).json({ success: false, message: 'Invalid books data' });
+  }
+
+  const stmt = db.prepare(`
+    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, userRating, recommendation)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  try {
+    const results = [];
+    for (const book of books) {
+      let coverUrl = book.coverUrl;
+      if (coverUrl && coverUrl.startsWith('http')) {
+        coverUrl = await ensureLocalCover(coverUrl);
+      }
+
+      const info = stmt.run(
+        book.title,
+        book.author,
+        book.readingDate || new Date().toISOString().split('T')[0],
+        '已读',
+        parseFloat(book.rating) || 5.0,
+        book.summary || '',
+        book.review || '',
+        JSON.stringify(book.quotes || []),
+        coverUrl || null,
+        100, // 批量导入默认为已读
+        parseInt(book.totalPages) || 0,
+        book.userRating ? parseFloat(book.userRating) : null,
+        book.recommendation || null
+      );
+      results.push({ id: info.lastInsertRowid, title: book.title });
+    }
+    res.json({ success: true, count: results.length });
+  } catch (err) {
+    console.error('Batch save failed:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // --- 笔记相关接口 ---
@@ -198,52 +340,43 @@ app.delete('/api/notes/:id', (req, res) => {
 const initMock = () => {
   const count = db.prepare('SELECT count(*) as count FROM books').get();
   if (count.count === 0) {
-    const today = new Date().toISOString().split('T')[0];
-    const mocks = [
-      {
-        title: '红楼梦', author: '曹雪芹', readingDate: '2025-01-15', status: '已读', rating: 5,
-        summary: '中国封建社会的百科全书，通过贾王史薛四大家族的兴衰，展现了封建社会的百态。', review: '字字看来皆是血，十年辛苦不寻常。中国文学史上不可逾越的高山。',
-        quotes: JSON.stringify([
-          {content: '满纸荒唐言，一把辛酸泪。', id: 1},
-          {content: '假作真时真亦假，无为有处有还无。', id: 2}
-        ]), 
-        coverUrl: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400',
-        readingProgress: 100, totalPages: 500
-      },
-      {
-        title: '万历十五年', author: '黄仁宇', readingDate: '2024-11-20', status: '已读', rating: 4,
-        summary: '从看似平淡的明朝万历十五年入手，剖析中国传统社会的结构与制度。', review: '大历史观的代表作，深入浅出，令人深思。',
-        quotes: JSON.stringify([{content: '大凡高度的组织，其重心必在下层。', id: 3}]), 
-        coverUrl: 'https://images.unsplash.com/photo-1512820790803-714041054363?auto=format&fit=crop&q=80&w=400',
-        readingProgress: 100, totalPages: 320
-      },
-      {
-        title: '我的经验与教训', author: '苏世民', readingDate: '2025-02-10', status: '已读', rating: 5,
-        summary: '黑石集团创始人苏世民的创业心路，蕴含极其深刻的商业洞察。', review: '卓越者的共同点不仅仅是努力，更是思考的维度。',
-        quotes: JSON.stringify([{content: '做大事和做小事的难易程度是一样的。', id: 4}]), 
-        coverUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=400',
-        readingProgress: 100, totalPages: 450
-      },
-      {
-        title: '解忧杂货店', author: '东野圭吾', readingDate: today, status: '在读', rating: 4,
-        summary: '温情治愈的悬疑小说，穿越时空的信件连接起了几个人的命运。', review: '所有的救赎，最后其实都是自救。',
-        quotes: JSON.stringify([
-          {content: '正因为是白纸，所以可以画任何地图。', id: 5}
-        ]), 
-        coverUrl: 'https://images.unsplash.com/photo-1532012197367-e338c0d96f2d?auto=format&fit=crop&q=80&w=400',
-        readingProgress: 65, totalPages: 280
-      }
-    ];
-    const insert = db.prepare(`
-      INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    mocks.forEach(m => insert.run(m.title, m.author, m.readingDate, m.status, m.rating, m.summary, m.review, m.quotes, m.coverUrl, m.readingProgress, m.totalPages));
+    // 默认不添加 mock，让用户自己导入
+    console.log('No books found, keeping database empty.');
   }
 };
 
 initMock();
+
+// SPA Fallback - 所有非 API 请求返回 index.html
+// 使用 fs.readFile 避免 Express 5 sendFile 的问题
+const indexHtmlPath = path.resolve(__dirname, 'dist', 'index.html');
+let indexHtmlCache = null;
+
+app.use((req, res, next) => {
+  // 只处理 GET 请求
+  if (req.method !== 'GET') {
+    return next();
+  }
+  // 跳过 API 路径和静态资源
+  if (req.path.startsWith('/api/') || req.path.startsWith('/uploads/') || req.path.includes('.')) {
+    return next();
+  }
+  
+  // 使用缓存的 index.html（生产环境）
+  if (indexHtmlCache) {
+    res.type('html').send(indexHtmlCache);
+    return;
+  }
+  
+  fs.readFile(indexHtmlPath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Failed to read index.html:', indexHtmlPath, err);
+      return next(err);
+    }
+    indexHtmlCache = data;
+    res.type('html').send(data);
+  });
+});
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);

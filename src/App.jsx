@@ -5,6 +5,14 @@ import {
   Moon, Sun, Laptop, Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  HashRouter as Router, 
+  Routes, 
+  Route, 
+  useNavigate, 
+  useParams,
+  useLocation
+} from 'react-router-dom';
 
 // --- Shadcn UI Components ---
 import { Button } from './components/ui/button';
@@ -42,6 +50,12 @@ const useTheme = () => {
   const toggleTheme = (val) => setTheme(val);
   return { theme, toggleTheme };
 };
+
+const Quote = ({ className }) => (
+  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V4H19.017C20.1216 4 21.017 4.89543 21.017 6V15C21.017 17.2091 19.2261 19 17.017 19H14.017V21H14.017ZM3.01697 21L3.01697 18C3.01697 16.8954 3.9124 16 5.01697 16H8.01697C8.56925 16 9.01697 15.5523 9.01697 15V9C9.01697 8.44772 8.56925 8 8.01697 8H5.01697C3.9124 8 3.01697 7.10457 3.01697 6V4H8.01697C9.12154 4 10.017 4.89543 10.017 6V15C10.017 17.2091 8.22611 19 6.01697 19H3.01697V21H3.01697Z" />
+  </svg>
+);
 
 // --- Book Card Component ---
 const BookCard = ({ book, onClick, isBatchMode, isSelected, onToggleSelect }) => {
@@ -90,21 +104,24 @@ const BookCard = ({ book, onClick, isBatchMode, isSelected, onToggleSelect }) =>
       <div className="space-y-1">
         <h3 className="font-bold text-sm line-clamp-1 group-hover:text-primary transition-colors">{book.title}</h3>
         <p className="text-xs text-muted-foreground">{book.author}</p>
-        <div className="flex items-center gap-1 mt-1 text-yellow-500">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} size={10} fill={i < (book.rating || 0) ? "currentColor" : "none"} />
-          ))}
-        </div>
-        <div className="mt-3 flex items-center gap-2">
-          <div className="h-1 flex-1 bg-muted rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary transition-all duration-700 ease-out" 
-              style={{ width: `${progressPercent}%` }}
-            />
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center gap-1 text-yellow-500">
+            {[...Array(5)].map((_, i) => {
+              const rating = book.userRating || book.rating || 0;
+              const displayRating = (rating > 5) ? rating / 2 : rating;
+              return <Star key={i} size={10} fill={i < displayRating ? "currentColor" : "none"} />;
+            })}
           </div>
-          <span className="text-[10px] text-muted-foreground font-mono font-bold">
-            {progressPercent}%
-          </span>
+          {book.recommendation && (
+            <span className={cn(
+              "text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter",
+              book.recommendation === '力荐' ? "bg-red-500 text-white" :
+              book.recommendation === '推荐' ? "bg-green-500 text-white" :
+              "bg-muted text-muted-foreground"
+            )}>
+              {book.recommendation}
+            </span>
+          )}
         </div>
       </div>
     </motion.div>
@@ -115,8 +132,9 @@ const BookCard = ({ book, onClick, isBatchMode, isSelected, onToggleSelect }) =>
 const BookEditor = ({ book, onSave, onCancel, onDelete, open, setOpen }) => {
   const [formData, setFormData] = useState(book || {
     title: '', author: '', readingDate: new Date().toISOString().split('T')[0],
-    status: '已读', rating: 5, summary: '', review: '', quotes: [], fileUrl: '',
-    readingProgress: 0, totalPages: 0
+    status: '已读', rating: 5, userRating: 0, recommendation: '推荐',
+    summary: '', review: '', quotes: [], fileUrl: '',
+    totalPages: 0
   });
   const [coverFile, setCoverFile] = useState(null);
   const [newQuote, setNewQuote] = useState('');
@@ -190,12 +208,21 @@ const BookEditor = ({ book, onSave, onCancel, onDelete, open, setOpen }) => {
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="rating">评分 (1-5)</Label>
-              <Input id="rating" type="number" min="1" max="5" value={formData.rating} onChange={e => setFormData({...formData, rating: parseInt(e.target.value)})} />
+              <Label htmlFor="rating">豆瓣评分</Label>
+              <Input id="rating" type="number" step="0.1" min="0" max="10" value={formData.rating} onChange={e => setFormData({...formData, rating: parseFloat(e.target.value)})} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="progress">进度 (%)</Label>
-              <Input id="progress" type="number" min="0" max="100" value={formData.readingProgress} onChange={e => setFormData({...formData, readingProgress: parseInt(e.target.value)})} />
+              <Label htmlFor="userRating">个人评分</Label>
+              <Input id="userRating" type="number" step="0.1" min="0" max="10" value={formData.userRating} onChange={e => setFormData({...formData, userRating: parseFloat(e.target.value)})} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="recommendation">推荐程度</Label>
+              <select className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm" value={formData.recommendation} onChange={e => setFormData({...formData, recommendation: e.target.value})}>
+                <option value="力荐">力荐</option>
+                <option value="推荐">推荐</option>
+                <option value="普通">普通</option>
+                <option value="不推荐">不推荐</option>
+              </select>
             </div>
           </div>
           <div className="space-y-2">
@@ -303,24 +330,45 @@ const BookFullscreenDetail = ({
                   </Badge>
                   <span className="text-muted-foreground text-sm font-medium">{book.readingDate}</span>
                 </div>
-                <h1 className="text-6xl font-black font-serif tracking-tighter mb-4 leading-none">
+                <h1 className="text-6xl font-black font-serif tracking-tighter mb-4 leading-none flex items-center gap-4">
                   {book.title}
+                  {book.recommendation && (
+                    <Badge className={cn(
+                      "px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-full border-none",
+                      book.recommendation === '力荐' ? "bg-red-500 text-white shadow-lg shadow-red-500/20" :
+                      book.recommendation === '推荐' ? "bg-green-500 text-white shadow-lg shadow-green-500/20" :
+                      book.recommendation === '普通' ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20" :
+                      "bg-muted text-muted-foreground"
+                    )}>
+                      {book.recommendation}
+                    </Badge>
+                  )}
                 </h1>
                 <p className="text-2xl text-muted-foreground font-medium italic">
                   — {book.author}
                 </p>
               </motion.div>
               
-              <div className="flex items-center gap-6 pt-4">
-                <div className="flex items-center gap-1 text-yellow-500">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={20} fill={i < (book.rating || 0) ? "currentColor" : "none"} />
-                  ))}
+              <div className="flex items-center gap-8 pt-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground opacity-60">Personal</span>
+                  <div className="flex items-center gap-1 text-yellow-500">
+                    {[...Array(5)].map((_, i) => {
+                      const rating = book.userRating || 0;
+                      const displayRating = (rating > 5) ? rating / 2 : rating;
+                      return <Star key={i} size={20} fill={i < displayRating ? "currentColor" : "none"} />;
+                    })}
+                  </div>
                 </div>
-                <div className="h-8 w-px bg-border" />
-                <div className="flex items-center gap-3">
-                  <div className="text-sm font-black uppercase tracking-widest text-muted-foreground">Progress</div>
-                  <div className="text-2xl font-mono font-bold">{progressPercent}%</div>
+                <div className="h-10 w-px bg-border/20" />
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground opacity-60">Douban</span>
+                  <div className="flex items-center gap-1 text-primary/40">
+                    {[...Array(5)].map((_, i) => {
+                      const displayRating = (book.rating > 5) ? book.rating / 2 : book.rating;
+                      return <Star key={i} size={16} fill={i < displayRating ? "currentColor" : "none"} />;
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
@@ -348,7 +396,7 @@ const BookFullscreenDetail = ({
 
         {/* Content Section */}
         <div className="max-w-7xl mx-auto px-10 py-20 pb-40">
-          <Tabs defaultValue="notes" className="w-full">
+          <Tabs defaultValue="overview" className="w-full">
             <TabsList className="w-fit mb-16 bg-muted/30 p-1 rounded-full h-14 border border-border/50">
               <TabsTrigger value="overview" className="rounded-full px-8 h-full data-[state=active]:bg-background data-[state=active]:shadow-lg text-base">概要与点评</TabsTrigger>
               <TabsTrigger value="notes" className="rounded-full px-8 h-full data-[state=active]:bg-background data-[state=active]:shadow-lg text-base">读书笔记 ({selectedBookNotes.length})</TabsTrigger>
@@ -380,25 +428,106 @@ const BookFullscreenDetail = ({
                 </div>
                 
                 <div className="space-y-12">
-                   <section className="bg-primary/5 p-8 rounded-[2rem] border border-primary/10">
-                      <Label className="text-xs uppercase font-black tracking-[0.1em] text-primary/60 mb-6 block italic">Reading Stats</Label>
-                      <div className="space-y-6">
-                        <div>
-                          <div className="text-3xl font-mono font-bold mb-2">{progressPercent}%</div>
-                          <div className="h-1.5 w-full bg-background rounded-full overflow-hidden">
-                            <div className="h-full bg-primary" style={{ width: `${progressPercent}%` }} />
+                   <section className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-8 rounded-[2rem] border border-primary/10 shadow-inner shadow-black/5">
+                      <Label className="text-xs uppercase font-black tracking-[0.1em] text-primary/60 mb-8 block italic flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                        阅读评分
+                      </Label>
+                      <div className="space-y-5">
+                          {/* My Rating - Large Hero Style */}
+                          <div className={cn(
+                            "p-6 rounded-2xl border relative overflow-hidden",
+                            book.userRating >= 9 ? "bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border-emerald-500/30" :
+                            book.userRating >= 8 ? "bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/30" :
+                            book.userRating >= 7 ? "bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/30" :
+                            book.userRating >= 6 ? "bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border-yellow-500/30" :
+                            book.userRating >= 5 ? "bg-gradient-to-br from-orange-500/20 to-orange-600/10 border-orange-500/30" :
+                            "bg-background/50 border-border/50"
+                          )}>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1 flex items-center gap-2">
+                                  <span>✍️</span> 个人评分
+                                </div>
+                                <div className={cn(
+                                  "text-4xl font-black tracking-tight",
+                                  book.userRating >= 9 ? "text-emerald-500" :
+                                  book.userRating >= 8 ? "text-green-500" :
+                                  book.userRating >= 7 ? "text-blue-500" :
+                                  book.userRating >= 6 ? "text-yellow-500" :
+                                  book.userRating >= 5 ? "text-orange-500" :
+                                  "text-foreground"
+                                )}>
+                                  {book.userRating || '-'}
+                                  <span className="text-sm font-medium opacity-40 ml-1">/ 10</span>
+                                </div>
+                              </div>
+                              {book.userRating && (
+                                <div className={cn(
+                                  "text-5xl opacity-20",
+                                  book.userRating >= 9 ? "text-emerald-500" :
+                                  book.userRating >= 8 ? "text-green-500" :
+                                  book.userRating >= 7 ? "text-blue-500" :
+                                  book.userRating >= 6 ? "text-yellow-500" :
+                                  "text-orange-500"
+                                )}>
+                                  {book.userRating >= 9 ? "🌟" : book.userRating >= 8 ? "⭐" : book.userRating >= 7 ? "👍" : book.userRating >= 6 ? "👌" : "🤔"}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                           <div className="p-3 bg-background rounded-2xl border border-border/50">
-                             <div className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Status</div>
-                             <div className="text-sm font-bold">{book.status}</div>
-                           </div>
-                           <div className="p-3 bg-background rounded-2xl border border-border/50">
-                             <div className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Rating</div>
-                             <div className="text-sm font-bold">{book.rating} / 5</div>
-                           </div>
-                        </div>
+
+                          {/* Douban Rating - Compact Style */}
+                          <div className="p-4 bg-background/50 backdrop-blur-sm rounded-xl border border-border/50 flex items-center justify-between">
+                            <div>
+                              <div className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1 flex items-center gap-2">
+                                <span>📖</span> 豆瓣评分
+                              </div>
+                              <div className="text-xl font-black text-muted-foreground">
+                                {book.rating || '-'}
+                                <span className="text-[10px] font-medium opacity-40 ml-1">/ 10</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 text-yellow-500/60">
+                              {[...Array(5)].map((_, i) => {
+                                const displayRating = (book.rating > 5) ? book.rating / 2 : book.rating;
+                                return <Star key={i} size={14} fill={i < displayRating ? "currentColor" : "none"} />;
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Recommendation - Tag Style with Icon */}
+                          <div className={cn(
+                            "p-5 rounded-xl border flex items-center gap-4",
+                            book.recommendation === '力荐' ? "bg-gradient-to-r from-red-500/20 via-pink-500/15 to-rose-500/10 border-red-500/30" :
+                            book.recommendation === '推荐' ? "bg-gradient-to-r from-green-500/20 via-emerald-500/15 to-teal-500/10 border-green-500/30" :
+                            book.recommendation === '普通' ? "bg-gradient-to-r from-blue-500/20 via-sky-500/15 to-cyan-500/10 border-blue-500/30" :
+                            book.recommendation === '不推荐' ? "bg-gradient-to-r from-gray-500/20 via-slate-500/15 to-zinc-500/10 border-gray-500/30" :
+                            "bg-muted/30 border-border/50"
+                          )}>
+                            <span className="text-3xl">
+                              {book.recommendation === '力荐' ? "🔥" :
+                               book.recommendation === '推荐' ? "👍" :
+                               book.recommendation === '普通' ? "🤔" :
+                               book.recommendation === '不推荐' ? "👎" : "❓"}
+                            </span>
+                            <div className="flex-1">
+                              <div className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1">推荐程度</div>
+                              <div className="flex items-center gap-2">
+                                <span className={cn(
+                                  "px-3 py-1 rounded-full text-sm font-black",
+                                  book.recommendation === '力荐' ? "bg-red-500 text-white shadow-lg shadow-red-500/30" :
+                                  book.recommendation === '推荐' ? "bg-green-500 text-white shadow-lg shadow-green-500/30" :
+                                  book.recommendation === '普通' ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30" :
+                                  book.recommendation === '不推荐' ? "bg-gray-500 text-white" :
+                                  "bg-muted text-muted-foreground"
+                                )}>
+                                  {book.recommendation || '未设定'}
+                                </span>
+                                {book.recommendation === '力荐' && <span className="text-xs text-red-400 font-medium">年度推荐!</span>}
+                              </div>
+                            </div>
+                          </div>
                       </div>
                    </section>
                 </div>
@@ -500,9 +629,26 @@ const BookFullscreenDetail = ({
 };
 
 
-export default function App() {
+export default function AppWrapper() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}
+
+function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Manually parse path for parameters since App is outside the Routes
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const isBookRoute = pathParts[0] === 'book';
+  const bookId = isBookRoute ? pathParts[1] : null;
+  const isYearRoute = pathParts[0] === 'year';
+  const activeTab = isYearRoute ? pathParts[1] : (isBookRoute ? 'All' : 'All');
+
   const [books, setBooks] = useState([]);
-  const [activeTab, setActiveTab] = useState('All');
   const [selectedBook, setSelectedBook] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -536,12 +682,17 @@ export default function App() {
   useEffect(() => { fetchBooks(); }, [searchQuery, sortBy]);
 
   useEffect(() => {
-    if (selectedBook) {
-      fetchNotes(selectedBook.id);
+    if (bookId && books.length > 0) {
+      const book = books.find(b => b.id.toString() === bookId);
+      if (book) {
+        setSelectedBook(book);
+        fetchNotes(book.id);
+      }
     } else {
+      setSelectedBook(null);
       setSelectedBookNotes([]);
     }
-  }, [selectedBook]);
+  }, [bookId, books]);
 
   const handleSave = async (formData, id) => {
     const url = id ? `${API_URL}/books/${id}` : `${API_URL}/books`;
@@ -617,7 +768,7 @@ export default function App() {
   const handleOpenEditorFromDetails = (bookToEdit) => {
     setEditingBook(bookToEdit);
     setEditorOpen(true);
-    setSelectedBook(null); // Close details panel when opening editor
+    navigate(-1); // Go back to close details, or stay if you prefer
   };
 
   const groupBooksByYear = (booksList) => {
@@ -637,17 +788,27 @@ export default function App() {
       .map(year => ({ year, items: groups[year] }));
   };
 
-  const filteredBooks = activeTab === 'All' ? books : books.filter(b => b.status === activeTab);
+  const filteredBooks = activeTab === 'All' ? books : books.filter(b => b.readingDate?.startsWith(activeTab));
   const groupedBooks = groupBooksByYear(filteredBooks);
 
+  const availableYears = [...new Set(books.map(b => b.readingDate?.split('-')[0]))]
+    .filter(Boolean)
+    .sort((a, b) => b.localeCompare(a));
+
   return (
-    <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans select-none">
+    <>
+      <Routes>
+        <Route path="/" element={<div />} />
+        <Route path="/year/:year" element={<div />} />
+        <Route path="/book/:bookId" element={<div />} />
+      </Routes>
+      <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans select-none">
       {/* Sidebar */}
       <aside className={cn(
         "w-72 border-r bg-muted/20 flex flex-col p-6 backdrop-blur-3xl transition-transform duration-500",
         selectedBook ? "-translate-x-full absolute" : "relative translate-x-0"
       )}>
-        <div className="flex items-center gap-3 mb-10 px-2 font-serif font-bold text-2xl tracking-tighter italic">
+        <div className="flex items-center gap-3 mb-10 px-2 font-serif font-bold text-2xl tracking-tighter">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
             <Book size={20} />
           </div>
@@ -655,21 +816,28 @@ export default function App() {
         </div>
 
         <nav className="flex-1 space-y-1">
-          <p className="px-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">My Library</p>
+          <p className="px-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">目录</p>
           <Button 
             variant={activeTab === 'All' ? "secondary" : "ghost"} 
             className="w-full justify-start gap-3 h-10" 
-            onClick={() => setActiveTab('All')}
+            onClick={() => navigate('/')}
           >
             <Library size={18} /> 全部书籍
           </Button>
-          <Button 
-            variant={activeTab === '已读' ? "secondary" : "ghost"} 
-            className="w-full justify-start gap-3 h-10" 
-            onClick={() => setActiveTab('已读')}
-          >
-            <CheckCircle2 size={18} /> 已读
-          </Button>
+          <Separator className="my-2" />
+          <p className="px-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">年份检索</p>
+          <ScrollArea className="h-[300px]">
+            {availableYears.map(year => (
+              <Button 
+                key={year}
+                variant={activeTab === year ? "secondary" : "ghost"} 
+                className="w-full justify-start gap-3 h-10" 
+                onClick={() => navigate(`/year/${year}`)}
+              >
+                <Clock size={18} /> {year} 年
+              </Button>
+            ))}
+          </ScrollArea>
         </nav>
 
         <div className="mt-auto pt-4 border-t space-y-4">
@@ -771,10 +939,10 @@ export default function App() {
                         <BookCard 
                           key={book.id} 
                           book={book} 
-                          onClick={setSelectedBook} 
                           isBatchMode={isBatchMode}
                           isSelected={selectedBookIds.includes(book.id)}
                           onToggleSelect={toggleSelectBook}
+                          onClick={(b) => navigate(`/book/${b.id}`)} 
                         />
                       ))}
                     </div>
@@ -794,7 +962,7 @@ export default function App() {
             isAdmin={isAdmin}
             onUpdateProgress={handleUpdateProgress}
             onOpenEditor={handleOpenEditorFromDetails}
-            onClose={() => setSelectedBook(null)}
+            onClose={() => navigate(-1)}
             selectedBookNotes={selectedBookNotes}
             handleDeleteNote={handleDeleteNote}
             isImportingNotes={isImportingNotes}
@@ -814,11 +982,6 @@ export default function App() {
         onDelete={handleDelete}
       />
     </div>
+    </>
   );
 }
-
-const Quote = ({ className }) => (
-  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V4H19.017C20.1216 4 21.017 4.89543 21.017 6V15C21.017 17.2091 19.2261 19 17.017 19H14.017V21H14.017ZM3.01697 21L3.01697 18C3.01697 16.8954 3.9124 16 5.01697 16H8.01697C8.56925 16 9.01697 15.5523 9.01697 15V9C9.01697 8.44772 8.56925 8 8.01697 8H5.01697C3.9124 8 3.01697 7.10457 3.01697 6V4H8.01697C9.12154 4 10.017 4.89543 10.017 6V15C10.017 17.2091 8.22611 19 6.01697 19H3.01697V21H3.01697Z" />
-  </svg>
-);

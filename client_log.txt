@@ -1,0 +1,10 @@
+
+> cang-shu-ge@0.0.0 dev
+> vite
+
+
+  VITE v7.3.0  ready in 105 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+8:02:00 PM [vite] (client) hmr update /src/index.css

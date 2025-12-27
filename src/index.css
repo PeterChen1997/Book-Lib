@@ -76,6 +76,8 @@
 @layer base {
   * {
     @apply border-border;
+    user-select: text;
+    -webkit-user-select: text;
   }
   body {
     @apply bg-background text-foreground transition-colors duration-300;

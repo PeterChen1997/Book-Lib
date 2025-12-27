@@ -29,7 +29,13 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/server.cjs ./
 COPY --from=builder /app/package.json ./
 
-# Create data directories
+# Copy data directory with SQLite database
+COPY --from=builder /app/data ./data
+
+# Copy uploaded files (covers, etc.)
+COPY --from=builder /app/server/uploads ./server/uploads
+
+# Ensure directories exist (in case they're empty in source)
 RUN mkdir -p data server/uploads
 
 # Expose port

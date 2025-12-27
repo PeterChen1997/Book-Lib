@@ -423,15 +423,14 @@ const BookFullscreenDetail = ({
                 </div>
                 
                 <div className="space-y-12">
-                   <section className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-8 rounded-[2rem] border border-primary/10 shadow-inner shadow-black/5">
-                      <Label className="text-xs uppercase font-black tracking-[0.1em] text-primary/60 mb-8 block italic flex items-center gap-2">
+                   <section className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-5 rounded-2xl border border-primary/10 shadow-inner shadow-black/5">
+                      <Label className="text-xs uppercase font-black tracking-[0.1em] text-primary/60 mb-4 block italic flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                         阅读评分
                       </Label>
-                      <div className="space-y-5">
-                          {/* My Rating - Large Hero Style */}
+                      <div className="space-y-3">
                           <div className={cn(
-                            "p-6 rounded-2xl border relative overflow-hidden",
+                            "p-4 rounded-xl border relative overflow-hidden",
                             book.userRating >= 9 ? "bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border-emerald-500/30" :
                             book.userRating >= 8 ? "bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/30" :
                             book.userRating >= 7 ? "bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/30" :
@@ -441,11 +440,11 @@ const BookFullscreenDetail = ({
                           )}>
                             <div className="flex items-center justify-between">
                               <div>
-                                <div className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1 flex items-center gap-2">
+                                <div className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-2">
                                   <span>✍️</span> 个人评分
                                 </div>
                                 <div className={cn(
-                                  "text-4xl font-black tracking-tight",
+                                  "text-5xl font-black tracking-tight",
                                   book.userRating >= 9 ? "text-emerald-500" :
                                   book.userRating >= 8 ? "text-green-500" :
                                   book.userRating >= 7 ? "text-blue-500" :
@@ -454,12 +453,12 @@ const BookFullscreenDetail = ({
                                   "text-foreground"
                                 )}>
                                   {book.userRating || '-'}
-                                  <span className="text-sm font-medium opacity-40 ml-1">/ 10</span>
+                                  <span className="text-base font-medium opacity-40 ml-1">/ 10</span>
                                 </div>
                               </div>
                               {book.userRating && (
                                 <div className={cn(
-                                  "text-5xl opacity-20",
+                                  "text-4xl opacity-30",
                                   book.userRating >= 9 ? "text-emerald-500" :
                                   book.userRating >= 8 ? "text-green-500" :
                                   book.userRating >= 7 ? "text-blue-500" :
@@ -472,42 +471,42 @@ const BookFullscreenDetail = ({
                             </div>
                           </div>
 
-                          {/* Douban Rating - Compact Style */}
-                          <div className="p-4 bg-background/50 backdrop-blur-sm rounded-xl border border-border/50 flex items-center justify-between">
+                          {/* Douban Rating */}
+                          <div className="p-3 bg-background/50 backdrop-blur-sm rounded-lg border border-border/50 flex items-center justify-between">
                             <div>
-                              <div className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1 flex items-center gap-2">
+                              <div className="text-xs font-bold text-muted-foreground mb-0.5 flex items-center gap-2">
                                 <span>📖</span> 豆瓣评分
                               </div>
-                              <div className="text-xl font-black text-muted-foreground">
+                              <div className="text-2xl font-black text-muted-foreground">
                                 {book.rating || '-'}
-                                <span className="text-[10px] font-medium opacity-40 ml-1">/ 10</span>
+                                <span className="text-xs font-medium opacity-40 ml-1">/ 10</span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1 text-yellow-500/60">
+                            <div className="flex items-center gap-0.5 text-yellow-500/60">
                               {[...Array(5)].map((_, i) => {
                                 const displayRating = (book.rating > 5) ? book.rating / 2 : book.rating;
-                                return <Star key={i} size={14} fill={i < displayRating ? "currentColor" : "none"} />;
+                                return <Star key={i} size={16} fill={i < displayRating ? "currentColor" : "none"} />;
                               })}
                             </div>
                           </div>
 
-                          {/* Recommendation - Tag Style with Icon */}
+                          {/* Recommendation */}
                           <div className={cn(
-                            "p-5 rounded-xl border flex items-center gap-4",
+                            "p-4 rounded-lg border flex items-center gap-3",
                             book.recommendation === '力荐' ? "bg-gradient-to-r from-red-500/20 via-pink-500/15 to-rose-500/10 border-red-500/30" :
                             book.recommendation === '推荐' ? "bg-gradient-to-r from-green-500/20 via-emerald-500/15 to-teal-500/10 border-green-500/30" :
                             book.recommendation === '普通' ? "bg-gradient-to-r from-blue-500/20 via-sky-500/15 to-cyan-500/10 border-blue-500/30" :
                             book.recommendation === '不推荐' ? "bg-gradient-to-r from-gray-500/20 via-slate-500/15 to-zinc-500/10 border-gray-500/30" :
                             "bg-muted/30 border-border/50"
                           )}>
-                            <span className="text-3xl">
+                            <span className="text-2xl">
                               {book.recommendation === '力荐' ? "🔥" :
                                book.recommendation === '推荐' ? "👍" :
                                book.recommendation === '普通' ? "🤔" :
                                book.recommendation === '不推荐' ? "👎" : "❓"}
                             </span>
                             <div className="flex-1">
-                              <div className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-1">推荐程度</div>
+                              <div className="text-xs font-bold text-muted-foreground mb-1">推荐程度</div>
                               <div className="flex items-center gap-2">
                                 <span className={cn(
                                   "px-3 py-1 rounded-full text-sm font-black",
@@ -519,7 +518,7 @@ const BookFullscreenDetail = ({
                                 )}>
                                   {book.recommendation || '未设定'}
                                 </span>
-                                {book.recommendation === '力荐' && <span className="text-xs text-red-400 font-medium">年度推荐!</span>}
+                                {book.recommendation === '力荐' && <span className="text-sm text-red-400 font-medium">年度推荐!</span>}
                               </div>
                             </div>
                           </div>

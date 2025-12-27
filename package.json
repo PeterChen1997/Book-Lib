@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node server.cjs & vite",
+    "dev:frontend": "vite",
+    "dev:server": "node server.cjs",
     "build": "vite build",
     "start": "node server.cjs",
     "lint": "eslint .",

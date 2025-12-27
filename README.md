@@ -1,16 +1,119 @@
-# React + Vite
+# 藏书阁 - 个人书库管理系统
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> 一个古典中式风格的个人书籍管理应用，用于记录阅读历程和管理书籍收藏。
 
-Currently, two official plugins are available:
+## 技术栈
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **前端**: React + Vite + TailwindCSS
+- **后端**: Node.js (Express)
+- **数据库**: SQLite (library.db)
+- **UI 组件**: Radix UI + 自定义组件
 
-## React Compiler
+## 项目结构
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```
+fiery-apollo/
+├── src/                    # 前端源码
+│   ├── App.jsx             # 主应用组件
+│   ├── components/         # React 组件
+│   │   └── ui/             # UI 基础组件
+│   ├── lib/                # 工具函数
+│   └── index.css           # 全局样式
+├── data/                   # 数据目录
+│   └── library.db          # SQLite 数据库
+├── uploads/                # 书籍封面图片
+├── server.cjs              # 后端 API 服务
+├── scripts/                # 脚本文件
+│   └── import-2025-books.cjs  # 书籍导入脚本
+└── public/                 # 静态资源
+```
 
-## Expanding the ESLint configuration
+## 数据库结构
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### books 表字段
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER | 主键，自增 |
+| title | TEXT | 书名 |
+| author | TEXT | 作者 |
+| readingDate | TEXT | 阅读日期 |
+| status | TEXT | 阅读状态 |
+| doubanRating | REAL | 豆瓣评分 (1-10) |
+| doubanSummary | TEXT | 豆瓣简介 |
+| review | TEXT | 个人书评 |
+| quotes | TEXT | 摘录 (JSON 数组) |
+| coverUrl | TEXT | 封面图片路径 |
+| userRating | INTEGER | 个人评分 (1-100) |
+| recommendationLevel | INTEGER | 推荐指数 (0-100) |
+| isbn | TEXT | ISBN 号 |
+
+## 当前书籍列表 (20本)
+
+| ID | 书名 | 作者 | 豆瓣评分 |
+|----|------|------|----------|
+| 7 | 高效能人士的七个习惯 (20周年纪念版) | [美] 史蒂芬·柯维 | 8.5 |
+| 8 | 重返大厂：创业治好了我的上班焦虑 | 罗量 | 7.8 |
+| 9 | 被讨厌的勇气 | [日] 岸见一郎 / 古贺史健 | 8.6 |
+| 10 | 仿生人会梦见电子羊吗？ | [美] 菲利普·迪克 | 8.7 |
+| 11 | 变形记 | [奥] 弗兰茨·卡夫卡 | 8.7 |
+| 12 | 列奥纳多·达·芬奇传 | [美] 沃尔特·艾萨克森 | 8.9 |
+| 13 | 习惯逃避 | 李国翠 | 7.2 |
+| 14 | 低欲望社会 | [日] 大前研一 | 6.3 |
+| 15 | 佐贺的超级阿嬷 | [日本] 岛田洋七 | 8.7 |
+| 16 | 如何对付蠢人 | [法]马克西姆·罗维尔 | 7.1 |
+| 17 | 因为独特 : 泡泡玛特创始人王宁从杂货铺到IP世界的跋涉 | 李翔 | 8.6 |
+| 18 | 西尔斯过敏全书 | [美] 威廉·西尔斯 / 玛莎·西尔斯 | 8.7 |
+| 19 | 蛤蟆先生去看心理医生 | [英] 罗伯特·戴博德 | 8.3 |
+| 20 | 我看见的世界 : 李飞飞自传 | [美] 李飞飞 | 8.8 |
+| 21 | 小王子 | [法] 安东尼·德·圣-埃克苏佩里 | 9.1 |
+| 22 | 吃的营养与治疗 | 阿德勒·戴维斯 | 8.4 |
+| 23 | 梵高手稿 | [荷] 文森特•梵高 / [美] H. 安娜•苏 / 编 | 9.5 |
+| 24 | 遇见未知的自己 | 张德芬 | 8.0 |
+| 25 | 进化心理学(第4版) | [美] 戴维·巴斯 | 9.0 |
+| 26 | 我的二本学生 | 黄灯 | 7.5 |
+
+## API 接口
+
+### GET /api/books
+获取所有书籍列表
+
+### GET /api/books/:id
+获取单本书籍详情
+
+### POST /api/books (已禁用)
+添加新书籍
+
+### PUT /api/books/:id (已禁用)
+更新书籍信息
+
+### DELETE /api/books/:id (已禁用)
+删除书籍
+
+## 运行方式
+
+```bash
+# 安装依赖
+npm install
+
+# 启动开发服务器 (前端)
+npm run dev
+
+# 启动后端服务
+node server.cjs
+```
+
+## 部署
+
+项目使用 Docker 部署，包含 Dockerfile 配置。
+
+```bash
+docker build -t cangshuger .
+docker run -p 3000:3000 cangshuger
+```
+
+## 注意事项
+
+1. **编辑功能已禁用**: 由于使用 SQLite，动态修改可能在重新部署时丢失，因此编辑功能已被禁用。
+2. **书籍封面**: 封面图片存储在 `/uploads/` 目录下，使用豆瓣 ISBN 命名。
+3. **评分系统**: 支持豆瓣 10 分制评分和个人百分制评分。

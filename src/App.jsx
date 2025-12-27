@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Home, Library, Clock, CheckCircle2, Book, Music, FileText, 
   Search, Plus, MoreHorizontal, ChevronRight, X, Edit3, Save, Trash2, Upload, User,
-  Moon, Sun, Laptop, Star
+  Moon, Sun, Laptop, Star, Menu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -302,17 +302,17 @@ const BookFullscreenDetail = ({
       {/* Scrollable Container */}
       <ScrollArea className="flex-1">
         {/* Hero Section */}
-        <div className="relative h-[60vh] min-h-[500px] w-full overflow-hidden">
+        <div className="relative min-h-[70vh] md:min-h-[500px] w-full overflow-hidden pb-8">
           <div 
             className="absolute inset-0 bg-cover bg-center scale-110 blur-3xl opacity-20"
             style={{ backgroundImage: `url(${coverPath})` }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
           
-          <div className="relative h-full max-w-7xl mx-auto px-10 flex flex-col md:flex-row items-end pb-12 gap-12">
+          <div className="relative h-full max-w-7xl mx-auto px-4 md:px-10 flex flex-col md:flex-row items-center md:items-end pt-20 md:pt-0 pb-6 md:pb-12 gap-6 md:gap-12">
             <motion.div 
               initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
-              className="w-64 flex-shrink-0"
+              className="w-40 md:w-64 flex-shrink-0"
             >
               <img 
                 src={coverPath} 
@@ -322,19 +322,19 @@ const BookFullscreenDetail = ({
               />
             </motion.div>
             
-            <div className="flex-1 space-y-6 mb-4">
+            <div className="flex-1 space-y-4 md:space-y-6 mb-4 text-center md:text-left">
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center md:justify-start gap-3 mb-4">
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-none text-xs px-3 py-1">
                     {book.status}
                   </Badge>
                   <span className="text-muted-foreground text-sm font-medium">{book.readingDate}</span>
                 </div>
-                <h1 className="text-6xl font-black font-serif tracking-tighter mb-4 leading-none flex items-center gap-4">
+                <h1 className="text-3xl md:text-6xl font-black font-serif tracking-tighter mb-4 leading-tight md:leading-none flex flex-col md:flex-row items-center gap-3 md:gap-4">
                   {book.title}
                   {book.recommendation && (
                     <Badge className={cn(
-                      "px-4 py-1.5 text-xs font-black uppercase tracking-widest rounded-full border-none",
+                      "px-3 md:px-4 py-1 md:py-1.5 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full border-none",
                       book.recommendation === '力荐' ? "bg-red-500 text-white shadow-lg shadow-red-500/20" :
                       book.recommendation === '推荐' ? "bg-green-500 text-white shadow-lg shadow-green-500/20" :
                       book.recommendation === '普通' ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20" :
@@ -344,7 +344,7 @@ const BookFullscreenDetail = ({
                     </Badge>
                   )}
                 </h1>
-                <p className="text-2xl text-muted-foreground font-medium italic">
+                <p className="text-lg md:text-2xl text-muted-foreground font-medium italic">
                   — {book.author}
                 </p>
               </motion.div>
@@ -375,7 +375,7 @@ const BookFullscreenDetail = ({
           </div>
 
           {/* Floating Action Bar */}
-          <div className="absolute top-10 right-10 left-10 flex justify-between items-center z-10">
+          <div className="absolute top-4 md:top-10 right-4 md:right-10 left-4 md:left-10 flex justify-between items-center z-10">
             <Button variant="ghost" size="icon" className="rounded-full bg-background/20 backdrop-blur-md hover:bg-background/40" onClick={onClose}>
               <X size={24} />
             </Button>
@@ -390,16 +390,16 @@ const BookFullscreenDetail = ({
         </div>
 
         {/* Content Section */}
-        <div className="max-w-7xl mx-auto px-10 py-20 pb-40">
+        <div className="max-w-7xl mx-auto px-4 md:px-10 py-10 md:py-20 pb-32 md:pb-40">
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-fit mb-16 bg-muted/30 p-1 rounded-full h-14 border border-border/50">
-              <TabsTrigger value="overview" className="rounded-full px-8 h-full data-[state=active]:bg-background data-[state=active]:shadow-lg text-base">概要与点评</TabsTrigger>
-              <TabsTrigger value="notes" className="rounded-full px-8 h-full data-[state=active]:bg-background data-[state=active]:shadow-lg text-base">读书笔记 ({selectedBookNotes.length})</TabsTrigger>
-              <TabsTrigger value="quotes" className="rounded-full px-8 h-full data-[state=active]:bg-background data-[state=active]:shadow-lg text-base">经典金句 ({book.quotes?.length || 0})</TabsTrigger>
+            <TabsList className="w-full md:w-fit mb-8 md:mb-16 bg-muted/30 p-1 rounded-2xl md:rounded-full h-12 md:h-14 border border-border/50 flex">
+              <TabsTrigger value="overview" className="flex-1 md:flex-none rounded-xl md:rounded-full px-3 md:px-8 h-full data-[state=active]:bg-background data-[state=active]:shadow-lg text-xs md:text-base">概要</TabsTrigger>
+              <TabsTrigger value="notes" className="flex-1 md:flex-none rounded-xl md:rounded-full px-3 md:px-8 h-full data-[state=active]:bg-background data-[state=active]:shadow-lg text-xs md:text-base">笔记 ({selectedBookNotes.length})</TabsTrigger>
+              <TabsTrigger value="quotes" className="flex-1 md:flex-none rounded-xl md:rounded-full px-3 md:px-8 h-full data-[state=active]:bg-background data-[state=active]:shadow-lg text-xs md:text-base">金句 ({book.quotes?.length || 0})</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="outline-none space-y-24">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+            <TabsContent value="overview" className="outline-none space-y-12 md:space-y-24">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16">
                 <div className="md:col-span-2 space-y-12">
                   <section>
                     <Label className="text-xs uppercase font-black tracking-[0.2em] text-primary mb-6 block">Content Summary</Label>
@@ -411,11 +411,11 @@ const BookFullscreenDetail = ({
                     </div>
                   </section>
                   <section>
-                    <Label className="text-xs uppercase font-black tracking-[0.2em] text-primary mb-6 block">Personal Review</Label>
-                    <div className="relative p-12 bg-muted/20 rounded-[3rem] border border-border/50 italic shadow-inner shadow-black/5">
-                      <Quote className="absolute -top-6 -left-6 w-16 h-16 text-primary/10 rotate-180" />
-                      <span className="absolute top-8 right-12 text-6xl font-serif text-primary/5 select-none">评</span>
-                      <p className="text-2xl leading-loose whitespace-pre-wrap font-serif relative z-10">
+                    <Label className="text-xs uppercase font-black tracking-[0.2em] text-primary mb-4 md:mb-6 block">Personal Review</Label>
+                    <div className="relative p-6 md:p-12 bg-muted/20 rounded-2xl md:rounded-[3rem] border border-border/50 italic shadow-inner shadow-black/5">
+                      <Quote className="absolute -top-4 -left-4 md:-top-6 md:-left-6 w-10 h-10 md:w-16 md:h-16 text-primary/10 rotate-180" />
+                      <span className="absolute top-4 right-6 md:top-8 md:right-12 text-4xl md:text-6xl font-serif text-primary/5 select-none">评</span>
+                      <p className="text-lg md:text-2xl leading-loose whitespace-pre-wrap font-serif relative z-10">
                         {book.review || "暂未撰写书评。"}
                       </p>
                     </div>
@@ -620,6 +620,7 @@ function App() {
   const [selectedBookNotes, setSelectedBookNotes] = useState([]);
   const [isImportingNotes, setIsImportingNotes] = useState(false);
   const [importText, setImportText] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const fetchBooks = async () => {
     try {
@@ -761,16 +762,38 @@ function App() {
         <Route path="/book/:bookId" element={<div />} />
       </Routes>
       <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans select-none">
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
       <aside className={cn(
-        "w-72 border-r bg-muted/20 flex flex-col p-6 backdrop-blur-3xl transition-transform duration-500",
-        selectedBook ? "-translate-x-full absolute" : "relative translate-x-0"
+        "w-72 border-r bg-muted/20 flex flex-col p-6 backdrop-blur-3xl transition-all duration-300 z-50",
+        // Desktop: normal flow, hidden when book detail is open
+        "hidden md:flex",
+        selectedBook && "md:-translate-x-full md:absolute",
+        // Mobile: fixed drawer
+        sidebarOpen && "!fixed !flex inset-y-0 left-0"
       )}>
-        <div className="flex items-center gap-3 mb-10 px-2 font-serif font-bold text-2xl tracking-tighter">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
-            <Book size={20} />
+        <div className="flex items-center justify-between mb-10 px-2">
+          <div className="flex items-center gap-3 font-serif font-bold text-2xl tracking-tighter">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+              <Book size={20} />
+            </div>
+            <span>藏书阁</span>
           </div>
-          <span>藏书阁</span>
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(false)}>
+            <X size={20} />
+          </Button>
         </div>
 
         <nav className="flex-1 space-y-1">
@@ -778,7 +801,7 @@ function App() {
           <Button 
             variant={activeTab === 'All' ? "secondary" : "ghost"} 
             className="w-full justify-start gap-3 h-10" 
-            onClick={() => navigate('/')}
+            onClick={() => { navigate('/'); setSidebarOpen(false); }}
           >
             <Library size={18} /> 全部书籍
           </Button>
@@ -790,7 +813,7 @@ function App() {
                 key={year}
                 variant={activeTab === year ? "secondary" : "ghost"} 
                 className="w-full justify-start gap-3 h-10" 
-                onClick={() => navigate(`/year/${year}`)}
+                onClick={() => { navigate(`/year/${year}`); setSidebarOpen(false); }}
               >
                 <Clock size={18} /> {year} 年
               </Button>
@@ -818,17 +841,29 @@ function App() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0">
+        {/* Mobile Top Bar */}
+        <div className="md:hidden flex items-center justify-between p-4 border-b bg-background/80 backdrop-blur-md sticky top-0 z-30">
+          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+            <Menu size={24} />
+          </Button>
+          <div className="flex items-center gap-2 font-serif font-bold text-lg">
+            <Book size={18} className="text-primary" />
+            <span>藏书阁</span>
+          </div>
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+        
         <ScrollArea className="flex-1">
-          <div className="max-w-7xl mx-auto p-10 pb-32">
+          <div className="max-w-7xl mx-auto p-4 md:p-10 pb-32">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
               <div className="flex-1">
-                <h1 className="text-5xl font-black font-serif mb-3 tracking-tighter">
+                <h1 className="text-3xl md:text-5xl font-black font-serif mb-3 tracking-tighter">
                   {activeTab === 'All' ? '全部藏书' : activeTab}
                 </h1>
                 <p className="text-muted-foreground font-medium italic">读书不觉已春深，一寸光阴一寸金</p>
                 
-                <div className="mt-8 flex flex-wrap gap-4 items-center">
-                  <div className="relative w-full max-w-sm">
+                <div className="mt-6 md:mt-8 flex flex-wrap gap-3 md:gap-4 items-center">
+                  <div className="relative flex-1 min-w-0 max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input 
                       placeholder="搜索书名或作者..." 
@@ -865,7 +900,7 @@ function App() {
                       <div className="h-px flex-1 bg-muted" />
                       <Badge variant="ghost" className="text-muted-foreground font-mono">{group.items.length}</Badge>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-10">
                       {group.items.map(book => (
                         <BookCard 
                           key={book.id} 

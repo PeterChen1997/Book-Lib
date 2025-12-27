@@ -313,7 +313,7 @@ const BookFullscreenDetail = ({
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
           
-          <div className="relative h-full max-w-7xl mx-auto px-4 md:px-10 flex flex-col md:flex-row items-center md:items-end pt-20 md:pt-0 pb-6 md:pb-12 gap-6 md:gap-12">
+          <div className="relative h-full max-w-7xl mx-auto px-4 md:px-10 flex flex-col md:flex-row items-center md:items-end pt-20 md:pt-20 pb-6 md:pb-12 gap-6 md:gap-12">
             <motion.div 
               initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
               className="w-40 md:w-64 flex-shrink-0"
@@ -402,37 +402,73 @@ const BookFullscreenDetail = ({
               <TabsTrigger value="quotes" className="flex-1 md:flex-none rounded-xl md:rounded-full px-3 md:px-8 h-full data-[state=active]:bg-background data-[state=active]:shadow-lg text-xs md:text-base">金句 ({book.quotes?.length || 0})</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="outline-none space-y-12 md:space-y-24">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16">
-                <div className="md:col-span-2 space-y-12">
-                  <section>
-                    <Label className="text-xs uppercase font-black tracking-[0.2em] text-primary mb-6 block">Content Summary</Label>
-                    <div className="relative">
-                      <div className="absolute -left-6 top-0 bottom-0 w-1 bg-primary/20 rounded-full" />
-                      <p className="text-xl leading-relaxed text-muted-foreground font-serif pl-0">
-                        {book.summary || "尚未添加书籍摘要。"}
-                      </p>
-                    </div>
-                  </section>
-                  <section>
-                    <Label className="text-xs uppercase font-black tracking-[0.2em] text-primary mb-4 md:mb-6 block">Personal Review</Label>
-                    <div className="relative p-6 md:p-12 bg-muted/20 rounded-2xl md:rounded-[3rem] border border-border/50 italic shadow-inner shadow-black/5">
-                      <Quote className="absolute -top-4 -left-4 md:-top-6 md:-left-6 w-10 h-10 md:w-16 md:h-16 text-primary/10 rotate-180" />
-                      <span className="absolute top-4 right-6 md:top-8 md:right-12 text-4xl md:text-6xl font-serif text-primary/5 select-none">评</span>
-                      <p className="text-lg md:text-2xl leading-loose whitespace-pre-wrap font-serif relative z-10">
-                        {book.review || "暂未撰写书评。"}
-                      </p>
-                    </div>
-                  </section>
-                </div>
-                
-                <div className="space-y-12">
-                   <section className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-5 rounded-2xl border border-primary/10 shadow-inner shadow-black/5">
-                      <Label className="text-xs uppercase font-black tracking-[0.1em] text-primary/60 mb-4 block italic flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <TabsContent value="overview" className="outline-none space-y-8 md:space-y-24">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-16">
+                {/* 阅读评分 - 移动端在前 */}
+                <div className="order-first md:order-last">
+                   <section className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-3 md:p-5 rounded-xl md:rounded-2xl border border-primary/10 shadow-inner shadow-black/5">
+                      <Label className="text-[10px] md:text-xs uppercase font-black tracking-[0.1em] text-primary/60 mb-2 md:mb-4 block italic flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-primary animate-pulse" />
                         阅读评分
                       </Label>
-                      <div className="space-y-3">
+                      {/* 移动端紧凑横向布局 */}
+                      <div className="flex md:hidden gap-2">
+                        {/* 个人评分 */}
+                        <div className={cn(
+                          "flex-1 p-2.5 rounded-lg border",
+                          book.userRating >= 9 ? "bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border-emerald-500/30" :
+                          book.userRating >= 8 ? "bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/30" :
+                          book.userRating >= 7 ? "bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/30" :
+                          book.userRating >= 6 ? "bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border-yellow-500/30" :
+                          "bg-background/50 border-border/50"
+                        )}>
+                          <div className="text-[10px] font-bold text-muted-foreground mb-0.5">✍️ 个人</div>
+                          <div className={cn(
+                            "text-2xl font-black",
+                            book.userRating >= 9 ? "text-emerald-500" :
+                            book.userRating >= 8 ? "text-green-500" :
+                            book.userRating >= 7 ? "text-blue-500" :
+                            book.userRating >= 6 ? "text-yellow-500" :
+                            "text-foreground"
+                          )}>
+                            {book.userRating || '-'}
+                            <span className="text-[10px] font-medium opacity-40">/10</span>
+                          </div>
+                        </div>
+                        {/* 豆瓣评分 */}
+                        <div className="flex-1 p-2.5 bg-background/50 rounded-lg border border-border/50">
+                          <div className="text-[10px] font-bold text-muted-foreground mb-0.5">📖 豆瓣</div>
+                          <div className="text-2xl font-black text-muted-foreground">
+                            {book.rating || '-'}
+                            <span className="text-[10px] font-medium opacity-40">/10</span>
+                          </div>
+                        </div>
+                        {/* 推荐程度 - 仅在有推荐时显示 */}
+                        {book.recommendation && (
+                          <div className={cn(
+                            "flex-1 p-2.5 rounded-lg border flex flex-col justify-center items-center",
+                            book.recommendation === '力荐' ? "bg-gradient-to-br from-red-500/20 to-rose-500/10 border-red-500/30" :
+                            book.recommendation === '推荐' ? "bg-gradient-to-br from-green-500/20 to-teal-500/10 border-green-500/30" :
+                            "bg-muted/30 border-border/50"
+                          )}>
+                            <span className="text-lg mb-0.5">
+                              {book.recommendation === '力荐' ? "🔥" :
+                               book.recommendation === '推荐' ? "👍" :
+                               book.recommendation === '普通' ? "🤔" : "👎"}
+                            </span>
+                            <span className={cn(
+                              "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                              book.recommendation === '力荐' ? "bg-red-500 text-white" :
+                              book.recommendation === '推荐' ? "bg-green-500 text-white" :
+                              "bg-muted text-muted-foreground"
+                            )}>
+                              {book.recommendation}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      {/* 桌面端原有布局 */}
+                      <div className="hidden md:block space-y-3">
                           <div className={cn(
                             "p-4 rounded-xl border relative overflow-hidden",
                             book.userRating >= 9 ? "bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border-emerald-500/30" :
@@ -529,6 +565,29 @@ const BookFullscreenDetail = ({
                       </div>
                    </section>
                 </div>
+
+                {/* 内容区域 */}
+                <div className="md:col-span-2 space-y-8 md:space-y-12 order-last md:order-first">
+                  <section>
+                    <Label className="text-xs uppercase font-black tracking-[0.2em] text-primary mb-4 md:mb-6 block">Content Summary</Label>
+                    <div className="relative ml-4 md:ml-0">
+                      <div className="absolute -left-4 md:-left-6 top-0 bottom-0 w-1 bg-primary/20 rounded-full" />
+                      <p className="text-base md:text-xl leading-relaxed text-muted-foreground font-serif pl-0">
+                        {book.summary || "尚未添加书籍摘要。"}
+                      </p>
+                    </div>
+                  </section>
+                  <section>
+                    <Label className="text-xs uppercase font-black tracking-[0.2em] text-primary mb-4 md:mb-6 block">Personal Review</Label>
+                    <div className="relative p-4 md:p-12 ml-4 md:ml-0 bg-muted/20 rounded-xl md:rounded-[3rem] border border-border/50 italic shadow-inner shadow-black/5">
+                      <Quote className="absolute -top-3 left-1 md:-top-6 md:-left-6 w-8 h-8 md:w-16 md:h-16 text-primary/10 rotate-180" />
+                      <span className="absolute top-3 right-4 md:top-8 md:right-12 text-3xl md:text-6xl font-serif text-primary/5 select-none">评</span>
+                      <p className="text-base md:text-2xl leading-loose whitespace-pre-wrap font-serif relative z-10">
+                        {book.review || "暂未撰写书评。"}
+                      </p>
+                    </div>
+                  </section>
+                </div>
               </div>
             </TabsContent>
 
@@ -571,14 +630,17 @@ const BookFullscreenDetail = ({
 
             <TabsContent value="quotes" className="outline-none">
                <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
-                 {book.quotes?.map((quote, idx) => (
-                   <div key={quote.id || idx} className="break-inside-avoid p-10 bg-primary/5 rounded-[2.5rem] border border-primary/10 relative overflow-hidden group">
-                     <span className="absolute -top-4 -right-4 text-8xl font-serif text-primary/10 select-none">”</span>
-                     <p className="text-xl italic font-serif leading-loose relative z-10 text-foreground/90">
-                       “{quote.content}”
-                     </p>
-                   </div>
-                 ))}
+                 {book.quotes?.map((quote, idx) => {
+                   const quoteText = typeof quote === 'string' ? quote : quote.content;
+                   return (
+                     <div key={idx} className="break-inside-avoid p-6 md:p-10 bg-primary/5 rounded-2xl md:rounded-[2.5rem] border border-primary/10 relative overflow-hidden group">
+                       <span className="absolute -top-4 -right-4 text-6xl md:text-8xl font-serif text-primary/10 select-none">"</span>
+                       <p className="text-base md:text-xl italic font-serif leading-loose relative z-10 text-foreground/90">
+                         "{quoteText}"
+                       </p>
+                     </div>
+                   );
+                 })}
                  {(!book.quotes || book.quotes.length === 0) && (
                    <p className="text-center text-muted-foreground py-20 col-span-full font-serif italic text-lg opacity-40">此书尚未收录金句。</p>
                  )}

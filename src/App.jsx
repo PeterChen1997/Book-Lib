@@ -29,8 +29,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
 import { ScrollArea } from './components/ui/scroll-area';
 import { cn } from './lib/utils';
 
-const API_URL = 'http://localhost:3001/api';
-const IMG_BASE = 'http://localhost:3001';
+const API_URL = '/api';
+const IMG_BASE = '';
 
 // --- Theme Hook ---
 const useTheme = () => {
@@ -385,11 +385,6 @@ const BookFullscreenDetail = ({
                   <FileText className="w-4 h-4 mr-2" /> 阅读原文
                 </Button>
               )}
-              {isAdmin && (
-                <Button variant="secondary" className="rounded-full bg-background/20 backdrop-blur-md" onClick={() => onOpenEditor(book)}>
-                  <Edit3 className="w-4 h-4 mr-2" /> 编辑
-                </Button>
-              )}
             </div>
           </div>
         </div>
@@ -540,32 +535,6 @@ const BookFullscreenDetail = ({
                    <h3 className="text-3xl font-serif font-bold">笔记流</h3>
                    <p className="text-muted-foreground mt-2">书中的灵光现，记录在此间。</p>
                  </div>
-                 {isAdmin && (
-                    <Dialog open={isImportingNotes} onOpenChange={setIsImportingNotes}>
-                      <DialogTrigger asChild>
-                        <Button className="rounded-full px-6 h-11">
-                          <Plus className="w-4 h-4 mr-2" /> 新增笔记
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>批量导入 / 记录笔记</DialogTitle>
-                        </DialogHeader>
-                        <div className="py-6 space-y-4">
-                          <Textarea 
-                            placeholder="粘贴您的笔记内容，每行将被识别为一条独立的笔记..." 
-                            value={importText} 
-                            onChange={(e) => setImportText(e.target.value)} 
-                            className="min-h-[300px] rounded-2xl p-6 text-base leading-relaxed"
-                          />
-                        </div>
-                        <DialogFooter>
-                          <Button variant="ghost" onClick={() => setIsImportingNotes(false)}>放弃</Button>
-                          <Button onClick={handleImportNotes} className="rounded-full px-8">保存笔记</Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                 )}
               </div>
 
               {selectedBookNotes.length === 0 ? (
@@ -586,19 +555,10 @@ const BookFullscreenDetail = ({
                       <p className="text-lg leading-relaxed font-serif text-foreground/80 whitespace-pre-wrap mb-10">
                         {note.content}
                       </p>
-                      <div className="absolute bottom-6 left-8 right-8 flex justify-between items-center">
+                      <div className="absolute bottom-6 left-8 right-8 flex items-center">
                         <span className="text-[10px] font-mono font-bold tracking-widest text-muted-foreground uppercase">
                           {new Date(note.created_at).toLocaleDateString()}
                         </span>
-                        {isAdmin && (
-                          <Button 
-                            variant="ghost" size="icon" 
-                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => handleDeleteNote(note.id)}
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        )}
                       </div>
                     </motion.div>
                   ))}
@@ -650,9 +610,8 @@ function App() {
 
   const [books, setBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingBook, setEditingBook] = useState(null);
+  // 编辑功能已禁用 - SQLite数据在部署时可能丢失
+  const isAdmin = false;
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('latest');
   const { theme, toggleTheme } = useTheme();
@@ -841,16 +800,13 @@ function App() {
         </nav>
 
         <div className="mt-auto pt-4 border-t space-y-4">
-          <div className="flex items-center justify-between px-2">
+          <div className="flex items-center px-2">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
                 <User size={16} />
               </div>
               <span className="text-sm font-semibold tracking-tight">PETER</span>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsAdmin(!isAdmin)}>
-              <Edit3 size={16} className={isAdmin ? 'text-blue-500' : ''} />
-            </Button>
           </div>
           
           <div className="bg-muted rounded-lg p-1 flex">
@@ -891,32 +847,8 @@ function App() {
                     <option value="rating">最高评分</option>
                     <option value="date">日期</option>
                   </select>
-                  
-                  {isAdmin && (
-                    <div className="flex gap-2 ml-auto">
-                      {isBatchMode ? (
-                        <>
-                          <Button variant="destructive" size="sm" onClick={handleBatchDelete} disabled={selectedBookIds.length === 0}>
-                            <Trash2 size={14} className="mr-2" /> 删除({selectedBookIds.length})
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => { setIsBatchMode(false); setSelectedBookIds([]); }}>
-                             取消
-                          </Button>
-                        </>
-                      ) : (
-                        <Button variant="outline" size="sm" onClick={() => setIsBatchMode(true)}>
-                          <CheckCircle2 size={14} className="mr-2" /> 批量管理
-                        </Button>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
-              {isAdmin && !isBatchMode && (
-                <Button onClick={() => { setEditingBook(null); setEditorOpen(true); }} className="rounded-full shadow-lg h-12 px-6">
-                  <Plus className="w-5 h-5 mr-2" /> 录入新书
-                </Button>
-              )}
             </header>
 
             {filteredBooks.length === 0 ? (
@@ -974,13 +906,7 @@ function App() {
         )}
       </AnimatePresence>
 
-      <BookEditor 
-        open={editorOpen} 
-        setOpen={setEditorOpen}
-        book={editingBook}
-        onSave={handleSave}
-        onDelete={handleDelete}
-      />
+
     </div>
     </>
   );

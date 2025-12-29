@@ -34,7 +34,9 @@ db.exec(`
     totalPages INTEGER DEFAULT 0,
     fileUrl TEXT,
     userRating REAL,
-    recommendation TEXT
+    recommendation TEXT,
+    isbn TEXT,
+    doubanId TEXT
   )
 `);
 
@@ -55,6 +57,12 @@ if (!tableInfo.find(c => c.name === 'userRating')) {
 if (!tableInfo.find(c => c.name === 'recommendation')) {
   db.exec("ALTER TABLE books ADD COLUMN recommendation TEXT");
 }
+if (!tableInfo.find(c => c.name === 'isbn')) {
+  db.exec("ALTER TABLE books ADD COLUMN isbn TEXT");
+}
+if (!tableInfo.find(c => c.name === 'doubanId')) {
+  db.exec("ALTER TABLE books ADD COLUMN doubanId TEXT");
+}
 
 const runMigration = (name, sql) => {
   const migration = db.prepare('SELECT * FROM migrations WHERE name = ?').get(name);
@@ -68,6 +76,12 @@ const runMigration = (name, sql) => {
 // Migration 001: 将所有“想读”状态变更为“已读”
 runMigration('001_remove_want_to_read', `
   UPDATE books SET status = '已读' WHERE status = '想读';
+`);
+
+// Migration 002: 创建 isbn 和 doubanId 唯一索引
+runMigration('002_add_unique_indexes', `
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_books_isbn ON books(isbn) WHERE isbn IS NOT NULL;
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_books_doubanId ON books(doubanId) WHERE doubanId IS NOT NULL;
 `);
 
 db.exec(`
@@ -167,7 +181,22 @@ app.get('/api/books', (req, res) => {
 
 // 添加书籍
 app.post('/api/books', upload.single('cover'), async (req, res) => {
-  const { title, author, readingDate, status, rating, summary, review, quotes, readingProgress, totalPages, fileUrl, userRating, recommendation } = req.body;
+  const { title, author, readingDate, status, rating, summary, review, quotes, readingProgress, totalPages, fileUrl, userRating, recommendation, isbn, doubanId } = req.body;
+  
+  // 去重检查：先检查 ISBN，再检查豆瓣ID
+  if (isbn) {
+    const existingByIsbn = db.prepare('SELECT id, title FROM books WHERE isbn = ?').get(isbn);
+    if (existingByIsbn) {
+      return res.status(409).json({ success: false, message: `书籍已存在（ISBN: ${isbn}）`, existingBook: existingByIsbn });
+    }
+  }
+  if (doubanId) {
+    const existingByDoubanId = db.prepare('SELECT id, title FROM books WHERE doubanId = ?').get(doubanId);
+    if (existingByDoubanId) {
+      return res.status(409).json({ success: false, message: `书籍已存在（豆瓣ID: ${doubanId}）`, existingBook: existingByDoubanId });
+    }
+  }
+
   let coverUrl = req.file ? `/uploads/${req.file.filename}` : (req.body.coverUrl || null);
   
   if (coverUrl && coverUrl.startsWith('http')) {
@@ -175,8 +204,8 @@ app.post('/api/books', upload.single('cover'), async (req, res) => {
   }
 
   const stmt = db.prepare(`
-    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, fileUrl, userRating, recommendation)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, fileUrl, userRating, recommendation, isbn, doubanId)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
   const quotesStr = typeof quotes === 'string' ? quotes : JSON.stringify(quotes || []);
@@ -184,7 +213,9 @@ app.post('/api/books', upload.single('cover'), async (req, res) => {
     title, author, readingDate, status, rating || 5, summary, review, quotesStr, coverUrl,
     readingProgress || 0, totalPages || 0, fileUrl,
     userRating ? parseFloat(userRating) : null,
-    recommendation || null
+    recommendation || null,
+    isbn || null,
+    doubanId || null
   );
   
   res.json({ id: info.lastInsertRowid, success: true });
@@ -193,7 +224,7 @@ app.post('/api/books', upload.single('cover'), async (req, res) => {
 // 更新书籍
 app.put('/api/books/:id', upload.single('cover'), async (req, res) => {
   const { id } = req.params;
-  const updateFields = ['title', 'author', 'readingDate', 'status', 'rating', 'summary', 'review', 'quotes', 'readingProgress', 'totalPages', 'fileUrl', 'userRating', 'recommendation'];
+  const updateFields = ['title', 'author', 'readingDate', 'status', 'rating', 'summary', 'review', 'quotes', 'readingProgress', 'totalPages', 'fileUrl', 'userRating', 'recommendation', 'isbn', 'doubanId'];
   const params = [];
   let setClauses = [];
 
@@ -250,13 +281,31 @@ app.post('/api/admin/batch-save', async (req, res) => {
   }
 
   const stmt = db.prepare(`
-    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, userRating, recommendation)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, userRating, recommendation, isbn, doubanId)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   try {
     const results = [];
+    const skipped = [];
+    
     for (const book of books) {
+      // 去重检查
+      if (book.isbn) {
+        const existingByIsbn = db.prepare('SELECT id, title FROM books WHERE isbn = ?').get(book.isbn);
+        if (existingByIsbn) {
+          skipped.push({ title: book.title, reason: `ISBN已存在: ${book.isbn}` });
+          continue;
+        }
+      }
+      if (book.doubanId) {
+        const existingByDoubanId = db.prepare('SELECT id, title FROM books WHERE doubanId = ?').get(book.doubanId);
+        if (existingByDoubanId) {
+          skipped.push({ title: book.title, reason: `豆瓣ID已存在: ${book.doubanId}` });
+          continue;
+        }
+      }
+
       let coverUrl = book.coverUrl;
       if (coverUrl && coverUrl.startsWith('http')) {
         coverUrl = await ensureLocalCover(coverUrl);
@@ -275,11 +324,13 @@ app.post('/api/admin/batch-save', async (req, res) => {
         100, // 批量导入默认为已读
         parseInt(book.totalPages) || 0,
         book.userRating ? parseFloat(book.userRating) : null,
-        book.recommendation || null
+        book.recommendation || null,
+        book.isbn || null,
+        book.doubanId || null
       );
       results.push({ id: info.lastInsertRowid, title: book.title });
     }
-    res.json({ success: true, count: results.length });
+    res.json({ success: true, imported: results.length, skipped: skipped.length, skippedBooks: skipped });
   } catch (err) {
     console.error('Batch save failed:', err);
     res.status(500).json({ success: false, error: err.message });

@@ -287,16 +287,16 @@ async function main() {
 
   const db = new Database(path.join(__dirname, '..', 'data', 'library.db'));
   
-  // 检查已存在的书籍
-  const existingBooks = db.prepare('SELECT title FROM books').all();
-  const existingTitles = new Set(existingBooks.map(b => b.title));
+  // 检查已存在的书籍（使用 ISBN）
+  const existingBooks = db.prepare('SELECT isbn, title FROM books WHERE isbn IS NOT NULL').all();
+  const existingIsbns = new Set(existingBooks.map(b => b.isbn));
 
   console.log('=== 2025年度书单导入脚本 ===\n');
-  console.log(`数据库中已有 ${existingBooks.length} 本书籍`);
+  console.log(`数据库中已有 ${existingBooks.length} 本书籍（有ISBN）`);
 
   const stmt = db.prepare(`
-    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, userRating, recommendation)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, userRating, recommendation, isbn)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   let imported = 0;
@@ -304,9 +304,9 @@ async function main() {
   let failed = 0;
 
   for (const book of books) {
-    // 跳过已存在的书籍
-    if (existingTitles.has(book.title)) {
-      console.log(`⏭️  跳过（已存在）: ${book.title}`);
+    // 使用 ISBN 去重
+    if (book.isbn && existingIsbns.has(book.isbn)) {
+      console.log(`⏭️  跳过（ISBN已存在）: ${book.title}`);
       skipped++;
       continue;
     }
@@ -343,7 +343,8 @@ async function main() {
         100, // readingProgress
         0,   // totalPages
         null, // userRating
-        null  // recommendation
+        null, // recommendation
+        book.isbn || null
       );
       console.log(`✅ 导入成功: ${book.title}`);
       imported++;

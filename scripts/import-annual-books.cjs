@@ -186,7 +186,7 @@ async function downloadImage(url, filename) {
     
     if (fs.existsSync(filePath)) {
       console.log(`  [跳过] 图片已存在: ${filename}`);
-      resolve(`/public/covers/${filename}`);
+      resolve(`/covers/${filename}`);
       return;
     }
 
@@ -201,7 +201,7 @@ async function downloadImage(url, filename) {
       file.on('finish', () => {
         file.close();
         console.log(`  [下载] ${filename}`);
-        resolve(`/public/covers/${filename}`);
+        resolve(`/covers/${filename}`);
       });
     }).on('error', (err) => {
       fs.unlink(filePath, () => {});

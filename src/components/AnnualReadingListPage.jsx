@@ -43,6 +43,31 @@ const extractBookTitle = (fullTitle) => {
   return fullTitle.split(' ')[0].replace(/[《》]/g, '');
 };
 
+// emoji 头像列表 - 可爱有趣的 emoji
+const AVATAR_EMOJIS = [
+  '🦊', '🐱', '🐶', '🐼', '🐨', '🦁', '🐯', '🐮', '🐷', '🐸',
+  '🐙', '🦋', '🐝', '🦄', '🐲', '🦉', '🐧', '🐬', '🦩', '🦚',
+  '🌸', '🌺', '🌻', '🌷', '🍀', '🌈', '⭐', '🌙', '☀️', '🔥',
+  '🎨', '🎭', '🎪', '🎯', '🎮', '📚', '✨', '💫', '🪐', '🌍'
+];
+
+/**
+ * 根据名字生成固定的 emoji 头像
+ * 同一个名字总是返回相同的 emoji
+ */
+const getAvatarEmoji = (name) => {
+  if (!name) return '📖';
+  // 计算名字的哈希值
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = ((hash << 5) - hash) + name.charCodeAt(i);
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  // 使用绝对值确保为正数
+  const index = Math.abs(hash) % AVATAR_EMOJIS.length;
+  return AVATAR_EMOJIS[index];
+};
+
 /**
  * 书籍详情弹窗组件 - 显示豆瓣书籍信息
  */
@@ -210,10 +235,10 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                     </div>
                     <div className="flex items-center gap-3 mb-4">
                       <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm"
-                        style={{ backgroundColor: theme.primary }}
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-2xl"
+                        style={{ backgroundColor: `${theme.primary}15` }}
                       >
-                        {book.name?.charAt(0) || '?'}
+                        {getAvatarEmoji(book.name)}
                       </div>
                       <div>
                         <div className="font-bold text-base" style={{ color: theme.primary }}>{book.name}</div>
@@ -407,8 +432,8 @@ const AnnualReadingListPage = ({ data, onClose }) => {
                     <div className="flex-1 p-4 md:p-6 pl-0">
                       {/* 分享人信息（凸显） */}
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: theme.primary }}>
-                          {item.name?.charAt(0) || '?'}
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xl" style={{ backgroundColor: `${theme.primary}15` }}>
+                          {getAvatarEmoji(item.name)}
                         </div>
                         <div>
                           <div className="font-bold text-base" style={{ color: theme.primary }}>{item.name}</div>

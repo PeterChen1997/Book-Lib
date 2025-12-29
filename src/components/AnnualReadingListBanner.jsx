@@ -58,15 +58,21 @@ const AnnualReadingListBanner = ({ year, count, onClick }) => {
           </div>
           
           {/* Text */}
-          <div>
-            <h3 className="font-bold text-base md:text-lg text-foreground flex items-center gap-2">
-              <span>谦益读书会 {year} 年度书单</span>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-base md:text-lg text-foreground leading-tight">
+              <span className="block sm:inline">谦益读书会</span>
+              <span className="block sm:inline"> {year} 年度书单</span>
+            </h3>
+            <div className="flex items-center gap-2 mt-1">
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${theme.badge}`}>
                 {count} 本
               </span>
-            </h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              群友们推荐的年度之书，点击查看详情
+              <span className="text-sm text-muted-foreground hidden sm:inline">
+                点击查看详情
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5 sm:hidden">
+              群友们推荐的年度之书
             </p>
           </div>
         </div>

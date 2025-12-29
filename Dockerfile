@@ -25,6 +25,8 @@ WORKDIR /app
 
 # Copy built assets and production dependencies
 COPY --from=builder /app/dist ./dist
+# Copy public/covers to dist/covers (Vite copies public to dist root)
+COPY --from=builder /app/public/covers ./dist/covers
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/server.cjs ./
 COPY --from=builder /app/package.json ./

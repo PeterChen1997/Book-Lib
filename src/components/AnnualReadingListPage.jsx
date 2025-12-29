@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import { normalizeCoverUrl } from '../utils/coverUrl';
 
 // 每年的主题色配置
 const YEAR_THEMES = {
@@ -151,9 +152,9 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                   {/* 封面 */}
                   <div className="w-32 md:w-40 flex-shrink-0">
                     <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-xl">
-                      {bookInfo.coverUrl || book.coverUrl ? (
+                      {normalizeCoverUrl(bookInfo.coverUrl) || normalizeCoverUrl(book.coverUrl) ? (
                         <img
-                          src={bookInfo.coverUrl || book.coverUrl}
+                          src={normalizeCoverUrl(bookInfo.coverUrl) || normalizeCoverUrl(book.coverUrl)}
                           alt={bookInfo.title}
                           className="w-full h-full object-cover"
                         />
@@ -416,20 +417,22 @@ const AnnualReadingListPage = ({ data, onClose }) => {
                 >
                   {/* 新布局：左侧封面 + 右侧内容 */}
                   <div className="flex">
-                    {/* 封面区域 */}
-                    <div className="w-28 md:w-36 flex-shrink-0 p-4">
-                      <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted shadow-lg group-hover:shadow-xl transition-shadow">
-                        {item.coverUrl ? (
-                          <img
-                            src={item.coverUrl}
-                            alt={item.bookTitle}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br" style={{ background: `linear-gradient(135deg, ${theme.primary}30, ${theme.primary}10)` }}>
-                            <Book className="w-10 h-10" style={{ color: theme.primary, opacity: 0.5 }} />
-                          </div>
-                        )}
+                    {/* 封面区域 - 固定宽高比 */}
+                    <div className="w-24 sm:w-28 md:w-36 flex-shrink-0 p-3 sm:p-4">
+                      <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
+                        <div className="absolute inset-0 rounded-xl overflow-hidden bg-muted shadow-lg group-hover:shadow-xl transition-shadow">
+                          {item.coverUrl ? (
+                            <img
+                              src={normalizeCoverUrl(item.coverUrl)}
+                              alt={item.bookTitle}
+                              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br" style={{ background: `linear-gradient(135deg, ${theme.primary}30, ${theme.primary}10)` }}>
+                              <Book className="w-8 h-8 sm:w-10 sm:h-10" style={{ color: theme.primary, opacity: 0.5 }} />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 

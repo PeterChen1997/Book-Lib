@@ -153,16 +153,26 @@ const ensureLocalCover = async (coverUrl) => {
 
 // --- 接口实现 ---
 
-// 获取所有书籍
+// 获取所有书籍（排除年度总结导入的书籍）
 app.get('/api/books', (req, res) => {
   let query = 'SELECT * FROM books';
   const params = [];
+  const conditions = [];
   
-  const { search, sort } = req.query;
+  const { search, sort, includeAnnual } = req.query;
+  
+  // 默认排除年度总结的书（coverUrl 以 /covers/annual 开头）
+  if (includeAnnual !== 'true') {
+    conditions.push("(coverUrl IS NULL OR coverUrl NOT LIKE '/covers/annual%')");
+  }
   
   if (search) {
-    query += ' WHERE title LIKE ? OR author LIKE ?';
+    conditions.push('(title LIKE ? OR author LIKE ?)');
     params.push(`%${search}%`, `%${search}%`);
+  }
+  
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ');
   }
   
   if (sort === 'rating') query += ' ORDER BY rating DESC';

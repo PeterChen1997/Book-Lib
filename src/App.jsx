@@ -30,6 +30,7 @@ import { ScrollArea } from './components/ui/scroll-area';
 import { cn } from './lib/utils';
 import AnnualReadingListBanner from './components/AnnualReadingListBanner';
 import AnnualReadingListPage from './components/AnnualReadingListPage';
+import { normalizeCoverUrl } from './utils/coverUrl';
 
 const API_URL = '/api';
 const IMG_BASE = '';
@@ -61,7 +62,7 @@ const Quote = ({ className }) => (
 
 // --- Book Card Component ---
 const BookCard = ({ book, onClick, isBatchMode, isSelected, onToggleSelect }) => {
-  const coverPath = book.coverUrl?.startsWith('http') ? book.coverUrl : `${IMG_BASE}${book.coverUrl}`;
+  const coverPath = normalizeCoverUrl(book.coverUrl) || 'https://via.placeholder.com/300x420?text=No+Cover';
   const progressPercent = book.status === '已读' ? 100 : (book.readingProgress || 0);
 
   return (
@@ -301,7 +302,7 @@ const BookFullscreenDetail = ({
 }) => {
   if (!book) return null;
   
-  const coverPath = book.coverUrl?.startsWith('http') ? book.coverUrl : `${IMG_BASE}${book.coverUrl}`;
+  const coverPath = normalizeCoverUrl(book.coverUrl) || 'https://via.placeholder.com/300x420?text=No+Cover';
   const progressPercent = book.status === '已读' ? 100 : (book.readingProgress || 0);
 
   return (

@@ -387,6 +387,46 @@ app.delete('/api/notes/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// --- 年度书单相关接口 ---
+
+// 加载年度书单数据
+const loadAnnualBookList = () => {
+  const dataPath = path.join(__dirname, 'data/annual-book-list.json');
+  try {
+    if (fs.existsSync(dataPath)) {
+      const data = fs.readFileSync(dataPath, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error('Failed to load annual book list:', err);
+  }
+  return {};
+};
+
+// 获取所有年份的年度书单列表
+app.get('/api/annual-lists', (req, res) => {
+  const data = loadAnnualBookList();
+  const years = Object.keys(data).map(year => ({
+    year,
+    title: data[year].title,
+    description: data[year].description,
+    count: data[year].items?.length || 0
+  }));
+  res.json(years);
+});
+
+// 获取指定年份的年度书单详情
+app.get('/api/annual-lists/:year', (req, res) => {
+  const { year } = req.params;
+  const data = loadAnnualBookList();
+  
+  if (data[year]) {
+    res.json(data[year]);
+  } else {
+    res.status(404).json({ success: false, message: `No annual list found for year ${year}` });
+  }
+});
+
 // 初始化 Mock 数据
 const initMock = () => {
   const count = db.prepare('SELECT count(*) as count FROM books').get();

@@ -28,6 +28,8 @@ import { Badge } from './components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
 import { ScrollArea } from './components/ui/scroll-area';
 import { cn } from './lib/utils';
+import AnnualReadingListBanner from './components/AnnualReadingListBanner';
+import AnnualReadingListPage from './components/AnnualReadingListPage';
 
 const API_URL = '/api';
 const IMG_BASE = '';
@@ -82,7 +84,11 @@ const BookCard = ({ book, onClick, isBatchMode, isSelected, onToggleSelect }) =>
           onError={(e) => { e.target.src = 'https://via.placeholder.com/300x420?text=No+Cover'; }}
         />
         <div className="absolute top-2 right-2 flex gap-1">
-          {book.readingDate?.startsWith('2025') && (
+          {/* 在读状态标签 */}
+          {book.status === '在读' && (
+            <Badge className="bg-green-500/90 backdrop-blur-md border-none text-[10px] h-5 px-1.5">📖 在读</Badge>
+          )}
+          {book.readingDate?.startsWith('2025') && book.status !== '在读' && (
             <Badge className="bg-blue-500/80 backdrop-blur-md border-none text-[10px] h-5 px-1.5">2025</Badge>
           )}
         </div>
@@ -671,7 +677,9 @@ function App() {
   const isBookRoute = pathParts[0] === 'book';
   const bookId = isBookRoute ? pathParts[1] : null;
   const isYearRoute = pathParts[0] === 'year';
+  const isAnnualListRoute = pathParts[0] === 'annual-list'; // Added
   const activeTab = isYearRoute ? pathParts[1] : (isBookRoute ? 'All' : 'All');
+  const annualListYear = isAnnualListRoute ? pathParts[1] : null; // Added
 
   const [books, setBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -687,6 +695,8 @@ function App() {
   const [isImportingNotes, setIsImportingNotes] = useState(false);
   const [importText, setImportText] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [annualLists, setAnnualLists] = useState([]);
+  const [selectedAnnualList, setSelectedAnnualList] = useState(null);
 
   const fetchBooks = async () => {
     try {
@@ -706,6 +716,28 @@ function App() {
 
   useEffect(() => { fetchBooks(); }, [searchQuery, sortBy]);
 
+  // 获取年度书单列表
+  const fetchAnnualLists = async () => {
+    try {
+      const res = await fetch(`${API_URL}/annual-lists`);
+      const data = await res.json();
+      setAnnualLists(data);
+    } catch (err) { console.error('Failed to fetch annual lists', err); }
+  };
+
+  // 获取指定年份的年度书单详情
+  const fetchAnnualListDetail = async (year) => {
+    try {
+      const res = await fetch(`${API_URL}/annual-lists/${year}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedAnnualList(data);
+      }
+    } catch (err) { console.error('Failed to fetch annual list detail', err); }
+  };
+
+  useEffect(() => { fetchAnnualLists(); }, []);
+
   useEffect(() => {
     if (bookId && books.length > 0) {
       const book = books.find(b => b.id.toString() === bookId);
@@ -718,6 +750,15 @@ function App() {
       setSelectedBookNotes([]);
     }
   }, [bookId, books]);
+
+  // Added useEffect for annualListYear
+  useEffect(() => {
+    if (annualListYear) {
+      fetchAnnualListDetail(annualListYear);
+    } else {
+      setSelectedAnnualList(null);
+    }
+  }, [annualListYear]);
 
   const handleSave = async (formData, id) => {
     const url = id ? `${API_URL}/books/${id}` : `${API_URL}/books`;
@@ -826,6 +867,7 @@ function App() {
         <Route path="/" element={<div />} />
         <Route path="/year/:year" element={<div />} />
         <Route path="/book/:bookId" element={<div />} />
+        <Route path="/annual-list/:year" element={<div />} />
       </Routes>
       <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans select-none">
       {/* Mobile Sidebar Overlay */}
@@ -846,7 +888,7 @@ function App() {
         "w-72 border-r bg-muted/20 flex flex-col p-6 backdrop-blur-3xl transition-all duration-300 z-50",
         // Desktop: normal flow, hidden when book detail is open
         "hidden md:flex",
-        selectedBook && "md:-translate-x-full md:absolute",
+        (selectedBook || selectedAnnualList) && "md:-translate-x-full md:absolute", // Modified
         // Mobile: fixed drawer
         sidebarOpen && "!fixed !flex inset-y-0 left-0"
       )}>
@@ -855,7 +897,7 @@ function App() {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
               <Book size={20} />
             </div>
-            <span>藏书阁</span>
+            <span>龙场书屋</span>
           </div>
           <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(false)}>
             <X size={20} />
@@ -914,7 +956,7 @@ function App() {
           </Button>
           <div className="flex items-center gap-2 font-serif font-bold text-lg">
             <Book size={18} className="text-primary" />
-            <span>藏书阁</span>
+            <span>龙场书屋</span>
           </div>
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
@@ -959,27 +1001,66 @@ function App() {
               </div>
             ) : (
               <div className="space-y-12">
-                {groupedBooks.map(group => (
+                {groupedBooks.map(group => {
+                  const annualList = annualLists.find(l => l.year === group.year);
+                  return (
                   <div key={group.year} className="space-y-6">
                     <div className="flex items-center gap-4">
                       <h2 className="text-2xl font-serif font-bold text-primary/80">{group.year}</h2>
                       <div className="h-px flex-1 bg-muted" />
                       <Badge variant="ghost" className="text-muted-foreground font-mono">{group.items.length}</Badge>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-10">
-                      {group.items.map(book => (
-                        <BookCard 
-                          key={book.id} 
-                          book={book} 
-                          isBatchMode={isBatchMode}
-                          isSelected={selectedBookIds.includes(book.id)}
-                          onToggleSelect={toggleSelectBook}
-                          onClick={(b) => navigate(`/book/${b.id}`)} 
-                        />
-                      ))}
-                    </div>
+                    {/* 年度书单 Banner */}
+                    {annualList && (
+                      <AnnualReadingListBanner
+                        year={annualList.year}
+                        count={annualList.count}
+                        onClick={() => {
+                          navigate(`/annual-list/${annualList.year}`); // Modified to use navigate
+                        }}
+                      />
+                    )}
+                    {/* 书籍网格 - 首页限制两行显示 */}
+                    {(() => {
+                      // 根据屏幕尺寸计算每行显示数量（与 grid 配置对应）
+                      // grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
+                      const maxItems = activeTab === 'All' ? 10 : group.items.length; // 首页最多10本（两行5列）
+                      const displayItems = group.items.slice(0, maxItems);
+                      const hasMore = group.items.length > maxItems;
+
+                      return (
+                        <>
+                          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-10">
+                            {displayItems.map(book => (
+                              <BookCard 
+                                key={book.id} 
+                                book={book} 
+                                isBatchMode={isBatchMode}
+                                isSelected={selectedBookIds.includes(book.id)}
+                                onToggleSelect={toggleSelectBook}
+                                onClick={(b) => navigate(`/book/${b.id}`)} 
+                              />
+                            ))}
+                          </div>
+                          {/* 查看全部按钮 */}
+                          {hasMore && (
+                            <div className="relative mt-4">
+                              {/* 渐变遮罩 */}
+                              <div className="absolute -top-16 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+                              <button
+                                onClick={() => navigate(`/year/${group.year}`)}
+                                className="w-full py-3 text-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors border border-dashed border-border/50 rounded-xl hover:border-border hover:bg-muted/20"
+                              >
+                                查看全部 {group.items.length} 本 →
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1002,6 +1083,19 @@ function App() {
             importText={importText}
             setImportText={setImportText}
             handleImportNotes={handleImportNotes}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Annual Reading List Detail View */}
+      <AnimatePresence>
+        {selectedAnnualList && (
+          <AnnualReadingListPage
+            data={selectedAnnualList}
+            onClose={() => {
+              setSelectedAnnualList(null);
+              navigate(-1);
+            }}
           />
         )}
       </AnimatePresence>

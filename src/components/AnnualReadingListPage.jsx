@@ -98,9 +98,9 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
     setError(null);
     
     try {
-      // 尝试根据书名从API搜索书籍
+      // 尝试根据书名从API搜索书籍，包含年度书单导入的数据
       const bookTitle = extractBookTitle(book.bookTitle);
-      const response = await fetch(`/api/books`);
+      const response = await fetch(`/api/books?includeAnnual=true`);
       const data = await response.json();
       
       // 在数据中查找匹配的书籍
@@ -118,7 +118,7 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
           title: bookTitle,
           author: book.bookTitle.replace(/《[^》]+》\s*/, '').trim() || '未知',
           coverUrl: book.coverUrl,
-          summary: book.reason,
+          summary: null, // 不再将推荐理由错置为简介
           rating: null
         });
       }
@@ -182,25 +182,28 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                     {/* 作者 */}
                     <p className="text-muted-foreground mt-2 text-sm sm:text-base">{bookInfo.author}</p>
 
-                    {/* 豆瓣评分 - 始终尝试显示 */}
-                    {(bookInfo.rating || book.rating) && (
+                    {/* 豆瓣评分 - 优先显示 matchedBook 的评分 */}
+                    {(bookInfo?.rating || book.rating) ? (
                       <div className="flex items-center gap-2 mt-3">
                         <div className="flex items-center gap-1 text-yellow-500">
                           {[...Array(5)].map((_, i) => {
-                            const rating = (bookInfo.rating || book.rating);
-                            const displayRating = rating > 5 ? rating / 2 : rating;
+                            const rawRating = bookInfo?.rating || book.rating;
+                            const displayRating = rawRating > 5 ? rawRating / 2 : rawRating;
                             return (
                               <Star
                                 key={i}
                                 size={14}
                                 fill={i < Math.floor(displayRating) ? 'currentColor' : 'none'}
+                                className={i < displayRating ? "text-yellow-500" : "text-border"}
                               />
                             );
                           })}
                         </div>
-                        <span className="text-sm font-bold">{bookInfo.rating || book.rating}</span>
-                        <span className="text-xs text-muted-foreground">豆瓣评分</span>
+                        <span className="text-sm font-bold text-foreground">{bookInfo?.rating || book.rating}</span>
+                        <span className="text-xs text-muted-foreground ml-1">豆瓣评分</span>
                       </div>
+                    ) : (
+                      <div className="mt-3 text-xs text-muted-foreground italic">暂无豆瓣评分</div>
                     )}
 
                     {/* 出版信息 */}
@@ -289,20 +292,22 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                   </div>
                 )}
 
-                {/* 2. 豆瓣书籍介绍（放在最后） */}
-                {bookInfo.summary && (
-                  <div className="mb-6 pt-4 border-t border-border/50">
-                    <div className={`flex items-center gap-2 text-sm font-bold uppercase tracking-wide mb-3 ${theme.accent}`}>
+                {/* 2. 豆瓣书籍介绍（放在最后，仅在有真实简介时显示） */}
+                {bookInfo?.summary && bookInfo.summary !== book.reason && (
+                  <div className="mb-6 pt-6 border-t border-border/50">
+                    <div className={`flex items-center gap-2 text-sm font-black uppercase tracking-widest mb-4 ${theme.accent}`}>
                       <Book className="w-4 h-4" />
-                      内容简介
+                      豆瓣书籍简介
                     </div>
-                    <div className="p-3 sm:p-4 rounded-xl bg-muted/30 border border-border/50">
-                      <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-sm">
+                    <div className="p-4 sm:p-6 rounded-2xl bg-muted/30 border border-border/50 shadow-inner">
+                      <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap text-sm sm:text-base font-serif">
                         {bookInfo.summary}
                       </p>
                     </div>
                   </div>
                 )}
+                
+              
               </>
             ) : null}
           </div>

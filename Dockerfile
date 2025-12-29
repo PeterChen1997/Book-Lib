@@ -29,8 +29,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/server.cjs ./
 COPY --from=builder /app/package.json ./
 
-# Copy data directory with SQLite database
-COPY --from=builder /app/data ./data
+# Copy data directory with SQLite database and annual book list
+COPY --from=builder /app/data/ ./data/
 
 # Copy uploaded files (covers, etc.)
 COPY --from=builder /app/server/uploads ./server/uploads

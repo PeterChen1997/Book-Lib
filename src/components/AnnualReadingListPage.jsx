@@ -199,18 +199,7 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                   </div>
                 )}
 
-                {/* 读书笔记/评论 */}
-                {bookInfo.review && (
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 text-sm font-bold text-green-600 dark:text-green-400 uppercase tracking-wide mb-3">
-                      <MessageCircle className="w-4 h-4" />
-                      读书笔记
-                    </div>
-                    <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                      {bookInfo.review}
-                    </p>
-                  </div>
-                )}
+
 
                 {/* 推荐人信息和完整分享内容（来自年度书单） */}
                 {book.name && (

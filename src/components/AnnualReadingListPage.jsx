@@ -148,24 +148,26 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
             ) : bookInfo ? (
               <>
                 {/* 头部：封面 + 基本信息 */}
-                <div className="flex gap-6 mb-6">
-                  {/* 封面 */}
-                  <div className="w-32 md:w-40 flex-shrink-0">
-                    <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-xl">
-                      {normalizeCoverUrl(bookInfo.coverUrl) || normalizeCoverUrl(book.coverUrl) ? (
-                        <img
-                          src={normalizeCoverUrl(bookInfo.coverUrl) || normalizeCoverUrl(book.coverUrl)}
-                          alt={bookInfo.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex items-center justify-center"
-                          style={{ background: `linear-gradient(135deg, ${theme.primary}30, ${theme.primary}10)` }}
-                        >
-                          <Book className="w-12 h-12" style={{ color: theme.primary, opacity: 0.5 }} />
-                        </div>
-                      )}
+                <div className="flex gap-4 sm:gap-6 mb-6">
+                  {/* 封面 - 使用固定宽高比 */}
+                  <div className="w-24 sm:w-32 md:w-40 flex-shrink-0">
+                    <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
+                      <div className="absolute inset-0 rounded-xl overflow-hidden shadow-xl">
+                        {normalizeCoverUrl(bookInfo.coverUrl) || normalizeCoverUrl(book.coverUrl) ? (
+                          <img
+                            src={normalizeCoverUrl(bookInfo.coverUrl) || normalizeCoverUrl(book.coverUrl)}
+                            alt={bookInfo.title}
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div
+                            className="absolute inset-0 flex items-center justify-center"
+                            style={{ background: `linear-gradient(135deg, ${theme.primary}30, ${theme.primary}10)` }}
+                          >
+                            <Book className="w-10 h-10 sm:w-12 sm:h-12" style={{ color: theme.primary, opacity: 0.5 }} />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 

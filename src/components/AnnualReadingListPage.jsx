@@ -174,69 +174,50 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                   {/* 信息 */}
                   <div className="flex-1 min-w-0">
                     <DialogHeader className="text-left p-0 space-y-2">
-                      <DialogTitle className="text-2xl md:text-3xl font-black font-serif leading-tight">
+                      <DialogTitle className="text-xl sm:text-2xl md:text-3xl font-black font-serif leading-tight">
                         {bookInfo.title}
                       </DialogTitle>
                     </DialogHeader>
 
                     {/* 作者 */}
-                    <p className="text-muted-foreground mt-2">{bookInfo.author}</p>
+                    <p className="text-muted-foreground mt-2 text-sm sm:text-base">{bookInfo.author}</p>
 
-                    {/* 豆瓣评分 */}
-                    {bookInfo.rating && (
+                    {/* 豆瓣评分 - 始终尝试显示 */}
+                    {(bookInfo.rating || book.rating) && (
                       <div className="flex items-center gap-2 mt-3">
                         <div className="flex items-center gap-1 text-yellow-500">
                           {[...Array(5)].map((_, i) => {
-                            const rating = bookInfo.rating > 5 ? bookInfo.rating / 2 : bookInfo.rating;
+                            const rating = (bookInfo.rating || book.rating);
+                            const displayRating = rating > 5 ? rating / 2 : rating;
                             return (
                               <Star
                                 key={i}
                                 size={14}
-                                fill={i < Math.floor(rating) ? 'currentColor' : 'none'}
+                                fill={i < Math.floor(displayRating) ? 'currentColor' : 'none'}
                               />
                             );
                           })}
                         </div>
-                        <span className="text-sm font-bold">{bookInfo.rating}</span>
+                        <span className="text-sm font-bold">{bookInfo.rating || book.rating}</span>
                         <span className="text-xs text-muted-foreground">豆瓣评分</span>
                       </div>
                     )}
 
                     {/* 出版信息 */}
-                    <div className="mt-4 text-sm text-muted-foreground space-y-1">
+                    <div className="mt-3 text-xs sm:text-sm text-muted-foreground space-y-1">
                       {bookInfo.publisher && (
                         <p>出版社：{bookInfo.publisher}</p>
                       )}
                       {bookInfo.isbn && (
                         <p>ISBN：{bookInfo.isbn}</p>
                       )}
-                      {bookInfo.readingDate && (
-                        <p>阅读日期：{bookInfo.readingDate}</p>
-                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* 内容简介 */}
-                {bookInfo.summary && (
-                  <div className="mb-6">
-                    <div className={`flex items-center gap-2 text-sm font-bold uppercase tracking-wide mb-3 ${theme.accent}`}>
-                      <Book className="w-4 h-4" />
-                      内容简介
-                    </div>
-                    <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-                      <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                        {bookInfo.summary}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-
-
-                {/* 推荐人信息和完整分享内容（来自年度书单） */}
+                {/* 1. 群友分享详情（优先显示） */}
                 {book.name && (
-                  <div className="pt-4 border-t border-border/50">
+                  <div className="mb-6 pt-4 border-t border-border/50">
                     <div className="flex items-center gap-2 text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-3">
                       <User className="w-4 h-4" />
                       年度书单推荐
@@ -261,7 +242,7 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                           <Sparkles className="w-4 h-4" />
                           推荐理由
                         </div>
-                        <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                        <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-sm">
                           {book.reason}
                         </p>
                       </div>
@@ -269,12 +250,12 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
 
                     {/* 精彩节选 */}
                     {book.excerpt && (
-                      <div className="mb-4 p-4 rounded-xl border" style={{ backgroundColor: `${theme.primary}08`, borderColor: `${theme.primary}20` }}>
+                      <div className="mb-4 p-3 sm:p-4 rounded-xl border" style={{ backgroundColor: `${theme.primary}08`, borderColor: `${theme.primary}20` }}>
                         <div className={`flex items-center gap-2 text-sm font-bold uppercase tracking-wide mb-2 ${theme.accent}`}>
                           <Quote className="w-4 h-4" />
                           精彩节选
                         </div>
-                        <p className="italic text-foreground/80 leading-relaxed font-serif whitespace-pre-wrap">
+                        <p className="italic text-foreground/80 leading-relaxed font-serif whitespace-pre-wrap text-sm">
                           "{book.excerpt}"
                         </p>
                       </div>
@@ -287,7 +268,7 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                           <Heart className="w-4 h-4" />
                           阅读后的改变
                         </div>
-                        <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                        <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-sm">
                           {book.change}
                         </p>
                       </div>
@@ -300,11 +281,26 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                           <MessageCircle className="w-4 h-4" />
                           想安利给
                         </div>
-                        <p className="text-muted-foreground/80 italic">
+                        <p className="text-muted-foreground/80 italic text-sm">
                           {book.recommendTo}
                         </p>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* 2. 豆瓣书籍介绍（放在最后） */}
+                {bookInfo.summary && (
+                  <div className="mb-6 pt-4 border-t border-border/50">
+                    <div className={`flex items-center gap-2 text-sm font-bold uppercase tracking-wide mb-3 ${theme.accent}`}>
+                      <Book className="w-4 h-4" />
+                      内容简介
+                    </div>
+                    <div className="p-3 sm:p-4 rounded-xl bg-muted/30 border border-border/50">
+                      <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-sm">
+                        {bookInfo.summary}
+                      </p>
+                    </div>
                   </div>
                 )}
               </>

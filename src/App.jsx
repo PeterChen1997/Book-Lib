@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Home, Library, Clock, CheckCircle2, Book, Music, FileText, 
   Search, Plus, MoreHorizontal, ChevronRight, X, Edit3, Save, Trash2, Upload, User,
-  Moon, Sun, Laptop, Star, Menu
+  Moon, Sun, Laptop, Star, Menu, ArrowUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -673,6 +673,28 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const scrollRef = useRef(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const scrollToTop = () => {
+    const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (viewport) {
+      viewport.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    const viewport = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (!viewport) return;
+
+    const handleScroll = () => {
+      setShowScrollTop(viewport.scrollTop > 300);
+    };
+
+    viewport.addEventListener('scroll', handleScroll);
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Manually parse path for parameters since App is outside the Routes
   const pathParts = location.pathname.split('/').filter(Boolean);
   const isBookRoute = pathParts[0] === 'book';
@@ -970,7 +992,7 @@ function App() {
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
         
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1" ref={scrollRef}>
           <div className="max-w-7xl mx-auto p-4 md:p-10 pb-32">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
               <div className="flex-1">
@@ -1109,7 +1131,20 @@ function App() {
         )}
       </AnimatePresence>
 
-
+      {/* Scroll to Top FAB */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={scrollToTop}
+            className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-40 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
+          >
+            <ArrowUp size={24} />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
     </>
   );

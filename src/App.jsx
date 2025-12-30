@@ -812,6 +812,14 @@ function App() {
     }
   };
 
+  const handleModalClose = () => {
+    if (location.key === 'default') {
+      navigate('/', { replace: true });
+    } else {
+      navigate(-1);
+    }
+  };
+
   const handleUpdateProgress = async (book, newProgress) => {
     const formData = new FormData();
     Object.keys(book).forEach(key => {
@@ -835,7 +843,7 @@ function App() {
   const handleOpenEditorFromDetails = (bookToEdit) => {
     setEditingBook(bookToEdit);
     setEditorOpen(true);
-    navigate(-1); // Go back to close details, or stay if you prefer
+    handleModalClose(); // Go back to close details, or stay if you prefer
   };
 
   const groupBooksByYear = (booksList) => {
@@ -1076,7 +1084,7 @@ function App() {
             isAdmin={isAdmin}
             onUpdateProgress={handleUpdateProgress}
             onOpenEditor={handleOpenEditorFromDetails}
-            onClose={() => navigate(-1)}
+            onClose={handleModalClose}
             selectedBookNotes={selectedBookNotes}
             handleDeleteNote={handleDeleteNote}
             isImportingNotes={isImportingNotes}
@@ -1095,7 +1103,7 @@ function App() {
             data={selectedAnnualList}
             onClose={() => {
               setSelectedAnnualList(null);
-              navigate(-1);
+              handleModalClose();
             }}
           />
         )}

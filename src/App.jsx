@@ -85,11 +85,15 @@ const BookCard = ({ book, onClick, isBatchMode, isSelected, onToggleSelect }) =>
           onError={(e) => { e.target.src = 'https://via.placeholder.com/300x420?text=No+Cover'; }}
         />
         <div className="absolute top-2 right-2 flex gap-1">
+          {/* 已读状态标签 - 绿色奖章样式 */}
+          {book.status === '已读' && (
+            <Badge className="bg-green-500/90 backdrop-blur-md border-none text-[10px] h-5 px-1.5 shadow-lg shadow-green-500/30">✓ 已读</Badge>
+          )}
           {/* 在读状态标签 */}
           {book.status === '在读' && (
-            <Badge className="bg-green-500/90 backdrop-blur-md border-none text-[10px] h-5 px-1.5">📖 在读</Badge>
+            <Badge className="bg-amber-500/90 backdrop-blur-md border-none text-[10px] h-5 px-1.5">📖 在读</Badge>
           )}
-          {book.readingDate?.startsWith('2025') && book.status !== '在读' && (
+          {book.readingDate?.startsWith('2025') && book.status !== '在读' && book.status !== '已读' && (
             <Badge className="bg-blue-500/80 backdrop-blur-md border-none text-[10px] h-5 px-1.5">2025</Badge>
           )}
         </div>

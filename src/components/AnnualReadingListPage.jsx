@@ -168,6 +168,12 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                             <Book className="w-10 h-10 sm:w-12 sm:h-12" style={{ color: theme.primary, opacity: 0.5 }} />
                           </div>
                         )}
+                        {/* 已读badge - 封面右上角 */}
+                        {(bookInfo.status === '已读' || bookInfo.readingProgress >= 100) && (
+                          <div className="absolute top-1.5 right-1.5">
+                            <Badge className="bg-green-500/90 backdrop-blur-md border-none text-[10px] h-5 px-1.5 shadow-lg shadow-green-500/30">✓ 已读</Badge>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -175,17 +181,9 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                   {/* 信息 */}
                   <div className="flex-1 min-w-0">
                     <DialogHeader className="text-left p-0 space-y-2">
-                      <div className="flex items-start gap-2">
-                        <DialogTitle className="text-xl sm:text-2xl md:text-3xl font-black font-serif leading-tight">
-                          {bookInfo.title}
-                        </DialogTitle>
-                        {(bookInfo.status === '已读' || bookInfo.readingProgress >= 100) && (
-                          <Badge variant="secondary" className="shrink-0 text-xs bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30 mt-1">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            已读
-                          </Badge>
-                        )}
-                      </div>
+                      <DialogTitle className="text-xl sm:text-2xl md:text-3xl font-black font-serif leading-tight">
+                        {bookInfo.title}
+                      </DialogTitle>
                     </DialogHeader>
 
                     {/* 作者 */}
@@ -476,6 +474,12 @@ const AnnualReadingListPage = ({ data, onClose }) => {
                               <Book className="w-8 h-8 sm:w-10 sm:h-10" style={{ color: theme.primary, opacity: 0.5 }} />
                             </div>
                           )}
+                          {/* 已读badge - 封面右上角 */}
+                          {isBookRead(item.bookTitle) && (
+                            <div className="absolute top-1 right-1">
+                              <Badge className="bg-green-500/90 backdrop-blur-md border-none text-[9px] h-4 px-1 shadow-lg shadow-green-500/30">✓ 已读</Badge>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -493,21 +497,13 @@ const AnnualReadingListPage = ({ data, onClose }) => {
                         </div>
                       </div>
 
-                      {/* 书名 - 可点击 + 已读badge */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <h3
-                          className="text-lg md:text-xl font-bold font-serif leading-tight line-clamp-2"
-                          onClick={() => setSelectedBook(item)}
-                        >
-                          {item.bookTitle}
-                        </h3>
-                        {isBookRead(item.bookTitle) && (
-                          <Badge variant="secondary" className="shrink-0 text-xs bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            已读
-                          </Badge>
-                        )}
-                      </div>
+                      {/* 书名 */}
+                      <h3
+                        className="text-lg md:text-xl font-bold font-serif leading-tight line-clamp-2 mb-3"
+                        onClick={() => setSelectedBook(item)}
+                      >
+                        {item.bookTitle}
+                      </h3>
 
                       {/* 推荐理由 */}
                       {item.reason && (

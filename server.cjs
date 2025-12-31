@@ -163,7 +163,7 @@ app.get('/api/books', (req, res) => {
   
   // 默认排除年度总结的书（coverUrl 以 /covers/annual 开头）
   if (includeAnnual !== 'true') {
-    conditions.push("(coverUrl IS NULL OR coverUrl NOT LIKE '/covers/annual%')");
+    conditions.push("(coverUrl IS NULL OR coverUrl NOT LIKE '/uploads/annual%')");
   }
   
   if (search) {

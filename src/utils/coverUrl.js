@@ -6,8 +6,6 @@
 /**
  * 规范化封面 URL
  * 支持以下格式：
- * - /public/covers/xxx.jpg -> /covers/xxx.jpg
- * - /covers/xxx.jpg -> /covers/xxx.jpg (保持不变)
  * - /uploads/xxx.jpg -> /uploads/xxx.jpg (保持不变)
  * - https://xxx (外链) -> 保持不变
  * - 空值 -> null
@@ -23,12 +21,7 @@ export const normalizeCoverUrl = (coverUrl) => {
     return coverUrl;
   }
   
-  // 修复 /public/covers/ -> /covers/
-  if (coverUrl.startsWith('/public/covers/')) {
-    return coverUrl.replace('/public/covers/', '/covers/');
-  }
-  
-  // 其他本地路径保持不变
+  // 本地路径保持不变
   return coverUrl;
 };
 

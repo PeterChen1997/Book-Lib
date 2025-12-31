@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Book, User, Quote, Sparkles, MessageCircle, Heart, Star, ExternalLink, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
+import { ScrollToTop } from './ui/scroll-to-top';
 import {
   Dialog,
   DialogContent,
@@ -323,6 +324,7 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
  */
 const AnnualReadingListPage = ({ data, onClose }) => {
   const [selectedBook, setSelectedBook] = useState(null);
+  const annualScrollRef = useRef(null);
 
   if (!data) return null;
 
@@ -336,7 +338,7 @@ const AnnualReadingListPage = ({ data, onClose }) => {
         exit={{ opacity: 0, x: -20 }}
         className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden"
       >
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1" viewportRef={annualScrollRef}>
           {/* Hero Section */}
           <div className="relative min-h-[40vh] md:min-h-[50vh] w-full overflow-hidden pb-8">
             {/* Background */}
@@ -499,6 +501,7 @@ const AnnualReadingListPage = ({ data, onClose }) => {
               </div>
             )}
           </div>
+          <ScrollToTop scrollRef={annualScrollRef} />
         </ScrollArea>
       </motion.div>
 

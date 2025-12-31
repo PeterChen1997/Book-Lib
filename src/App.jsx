@@ -293,7 +293,6 @@ const BookEditor = ({ book, onSave, onCancel, onDelete, open, setOpen }) => {
 const BookFullscreenDetail = ({ 
   book, 
   isAdmin, 
-  onUpdateProgress, 
   onOpenEditor, 
   onClose,
   selectedBookNotes,
@@ -1072,7 +1071,6 @@ function App() {
           <BookFullscreenDetail 
             book={selectedBook}
             isAdmin={isAdmin}
-            onUpdateProgress={handleUpdateProgress}
             onOpenEditor={handleOpenEditorFromDetails}
             onClose={handleModalClose}
             selectedBookNotes={selectedBookNotes}

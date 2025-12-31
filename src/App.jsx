@@ -64,7 +64,6 @@ const Quote = ({ className }) => (
 // --- Book Card Component ---
 const BookCard = ({ book, onClick, isBatchMode, isSelected, onToggleSelect }) => {
   const coverPath = normalizeCoverUrl(book.coverUrl) || 'https://via.placeholder.com/300x420?text=No+Cover';
-  const progressPercent = book.status === '已读' ? 100 : (book.readingProgress || 0);
 
   return (
     <motion.div 
@@ -160,7 +159,7 @@ const BookEditor = ({ book, onSave, onCancel, onDelete, open, setOpen }) => {
       setFormData({
         title: '', author: '', readingDate: new Date().toISOString().split('T')[0],
         status: '已读', rating: 5, summary: '', review: '', quotes: [], fileUrl: '',
-        readingProgress: 0, totalPages: 0
+        totalPages: 0
       });
     }
     setCoverFile(null);
@@ -305,7 +304,6 @@ const BookFullscreenDetail = ({
   if (!book) return null;
   
   const coverPath = normalizeCoverUrl(book.coverUrl) || 'https://via.placeholder.com/300x420?text=No+Cover';
-  const progressPercent = book.status === '已读' ? 100 : (book.readingProgress || 0);
 
   return (
     <motion.div 
@@ -824,19 +822,6 @@ function App() {
     }
   };
 
-  const handleUpdateProgress = async (book, newProgress) => {
-    const formData = new FormData();
-    Object.keys(book).forEach(key => {
-      if (key === 'quotes') formData.append(key, JSON.stringify(book[key]));
-      else if (key === 'readingProgress') formData.append(key, newProgress);
-      else formData.append(key, book[key]);
-    });
-    await fetch(`${API_URL}/books/${book.id}`, { method: 'PUT', body: formData });
-    fetchBooks();
-    if (selectedBook && selectedBook.id === book.id) {
-      setSelectedBook({ ...selectedBook, readingProgress: newProgress });
-    }
-  };
 
   const toggleSelectBook = (id) => {
     setSelectedBookIds(prev => 

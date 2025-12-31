@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Book, User, Quote, Sparkles, MessageCircle, Heart, Star, ExternalLink, Loader2 } from 'lucide-react';
+import { X, Book, User, Quote, Sparkles, MessageCircle, Heart, Star, ExternalLink, Loader2, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -175,9 +175,17 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
                   {/* 信息 */}
                   <div className="flex-1 min-w-0">
                     <DialogHeader className="text-left p-0 space-y-2">
-                      <DialogTitle className="text-xl sm:text-2xl md:text-3xl font-black font-serif leading-tight">
-                        {bookInfo.title}
-                      </DialogTitle>
+                      <div className="flex items-start gap-2">
+                        <DialogTitle className="text-xl sm:text-2xl md:text-3xl font-black font-serif leading-tight">
+                          {bookInfo.title}
+                        </DialogTitle>
+                        {(bookInfo.status === '已读' || bookInfo.readingProgress >= 100) && (
+                          <Badge variant="secondary" className="shrink-0 text-xs bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30 mt-1">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            已读
+                          </Badge>
+                        )}
+                      </div>
                     </DialogHeader>
 
                     {/* 作者 */}
@@ -325,6 +333,37 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
 const AnnualReadingListPage = ({ data, onClose }) => {
   const [selectedBook, setSelectedBook] = useState(null);
   const annualScrollRef = useRef(null);
+  const [readBooks, setReadBooks] = useState({});
+
+  // 加载书籍库，用于匹配已读状态
+  useEffect(() => {
+    const loadReadBooks = async () => {
+      try {
+        const response = await fetch('/api/books?includeAnnual=true');
+        const books = await response.json();
+        // 创建书名到状态的映射
+        const readMap = {};
+        books.forEach(book => {
+          if (book.status === '已读' || book.readingProgress >= 100) {
+            readMap[book.title] = true;
+          }
+        });
+        setReadBooks(readMap);
+      } catch (err) {
+        console.error('Failed to load read books:', err);
+      }
+    };
+    loadReadBooks();
+  }, []);
+
+  // 检查书籍是否已读
+  const isBookRead = (bookTitle) => {
+    const title = extractBookTitle(bookTitle);
+    // 检查完全匹配和部分匹配
+    return Object.keys(readBooks).some(t => 
+      t === title || t.includes(title) || title.includes(t)
+    );
+  };
 
   if (!data) return null;
 
@@ -454,13 +493,21 @@ const AnnualReadingListPage = ({ data, onClose }) => {
                         </div>
                       </div>
 
-                      {/* 书名 - 可点击 */}
-                      <h3
-                        className="text-lg md:text-xl font-bold font-serif mb-3 leading-tight line-clamp-2 cursor-pointer hover:underline"
-                        onClick={() => setSelectedBook(item)}
-                      >
-                        {item.bookTitle}
-                      </h3>
+                      {/* 书名 - 可点击 + 已读badge */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <h3
+                          className="text-lg md:text-xl font-bold font-serif leading-tight line-clamp-2"
+                          onClick={() => setSelectedBook(item)}
+                        >
+                          {item.bookTitle}
+                        </h3>
+                        {isBookRead(item.bookTitle) && (
+                          <Badge variant="secondary" className="shrink-0 text-xs bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            已读
+                          </Badge>
+                        )}
+                      </div>
 
                       {/* 推荐理由 */}
                       {item.reason && (

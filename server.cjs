@@ -191,7 +191,7 @@ app.get('/api/books', (req, res) => {
 
 // 添加书籍
 app.post('/api/books', upload.single('cover'), async (req, res) => {
-  const { title, author, readingDate, status, rating, summary, review, quotes, readingProgress, totalPages, fileUrl, userRating, recommendation, isbn, doubanId } = req.body;
+  const { title, author, readingDate, status, rating, summary, review, quotes, totalPages, fileUrl, userRating, recommendation, isbn, doubanId } = req.body;
   
   // 去重检查：先检查 ISBN，再检查豆瓣ID
   if (isbn) {
@@ -214,14 +214,14 @@ app.post('/api/books', upload.single('cover'), async (req, res) => {
   }
 
   const stmt = db.prepare(`
-    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, fileUrl, userRating, recommendation, isbn, doubanId)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, totalPages, fileUrl, userRating, recommendation, isbn, doubanId)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
   const quotesStr = typeof quotes === 'string' ? quotes : JSON.stringify(quotes || []);
   const info = stmt.run(
     title, author, readingDate, status, rating || 5, summary, review, quotesStr, coverUrl,
-    readingProgress || 0, totalPages || 0, fileUrl,
+    totalPages || 0, fileUrl,
     userRating ? parseFloat(userRating) : null,
     recommendation || null,
     isbn || null,
@@ -234,7 +234,7 @@ app.post('/api/books', upload.single('cover'), async (req, res) => {
 // 更新书籍
 app.put('/api/books/:id', upload.single('cover'), async (req, res) => {
   const { id } = req.params;
-  const updateFields = ['title', 'author', 'readingDate', 'status', 'rating', 'summary', 'review', 'quotes', 'readingProgress', 'totalPages', 'fileUrl', 'userRating', 'recommendation', 'isbn', 'doubanId'];
+  const updateFields = ['title', 'author', 'readingDate', 'status', 'rating', 'summary', 'review', 'quotes', 'totalPages', 'fileUrl', 'userRating', 'recommendation', 'isbn', 'doubanId'];
   const params = [];
   let setClauses = [];
 
@@ -291,8 +291,8 @@ app.post('/api/admin/batch-save', async (req, res) => {
   }
 
   const stmt = db.prepare(`
-    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, userRating, recommendation, isbn, doubanId)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, totalPages, userRating, recommendation, isbn, doubanId)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   try {
@@ -331,7 +331,6 @@ app.post('/api/admin/batch-save', async (req, res) => {
         book.review || '',
         JSON.stringify(book.quotes || []),
         coverUrl || null,
-        100, // 批量导入默认为已读
         parseInt(book.totalPages) || 0,
         book.userRating ? parseFloat(book.userRating) : null,
         book.recommendation || null,

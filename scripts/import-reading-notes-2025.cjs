@@ -366,8 +366,7 @@ async function main() {
       userRating = ?, 
       review = ?, 
       quotes = ?,
-      status = CASE WHEN status = '想读' OR status = '在读' THEN ? ELSE status END,
-      readingProgress = CASE WHEN ? = '已读' THEN 100 ELSE readingProgress END
+      status = CASE WHEN status = '想读' OR status = '在读' THEN ? ELSE status END
     WHERE id = ?
   `);
 
@@ -393,7 +392,6 @@ async function main() {
           book.review || '',
           JSON.stringify(book.quotes || []),
           book.status, // 新状态
-          book.status, // 用于判定是否设置进度为 100
           existingId
         );
         console.log(`✅ 更新成功: "${book.title}" -> 匹配到: "${targetTitle}" (ID: ${existingId})`);

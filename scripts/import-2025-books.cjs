@@ -295,8 +295,8 @@ async function main() {
   console.log(`数据库中已有 ${existingBooks.length} 本书籍（有ISBN）`);
 
   const stmt = db.prepare(`
-    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, readingProgress, totalPages, userRating, recommendation, isbn)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO books (title, author, readingDate, status, rating, summary, review, quotes, coverUrl, totalPages, userRating, recommendation, isbn)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   let imported = 0;
@@ -340,7 +340,6 @@ async function main() {
         '', // review
         '[]', // quotes
         localCoverUrl,
-        100, // readingProgress
         0,   // totalPages
         null, // userRating
         null, // recommendation

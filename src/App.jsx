@@ -31,6 +31,7 @@ import { cn } from './lib/utils';
 import { ScrollToTop } from './components/ui/scroll-to-top';
 import AnnualReadingListBanner from './components/AnnualReadingListBanner';
 import AnnualReadingListPage from './components/AnnualReadingListPage';
+import BookCover from './components/BookCover';
 import { normalizeCoverUrl } from './utils/coverUrl';
 
 const API_URL = '/api';
@@ -63,8 +64,6 @@ const Quote = ({ className }) => (
 
 // --- Book Card Component ---
 const BookCard = ({ book, onClick, isBatchMode, isSelected, onToggleSelect }) => {
-  const coverPath = normalizeCoverUrl(book.coverUrl) || 'https://via.placeholder.com/300x420?text=No+Cover';
-
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -77,23 +76,19 @@ const BookCard = ({ book, onClick, isBatchMode, isSelected, onToggleSelect }) =>
       )}
       onClick={() => isBatchMode ? onToggleSelect(book.id) : onClick(book)}
     >
-      <div className="relative book-spine-shadow aspect-[3/4.2] rounded-md overflow-hidden bg-muted">
-        <img 
-          src={coverPath} 
-          alt={book.title} 
-          className="w-full h-full object-cover transition-all group-hover:brightness-110"
-          onError={(e) => { e.target.src = 'https://via.placeholder.com/300x420?text=No+Cover'; }}
+      <div className="relative">
+        <BookCover
+          coverUrl={book.coverUrl}
+          title={book.title}
+          status={book.status}
+          readingDate={book.readingDate}
+          showUnreadBadge={true}
+          showReadBadge={false}
         />
-        {/* 首页只显示"在读"状态，已读不显示badge */}
-        <div className="absolute top-2 right-2 flex gap-1">
-          {book.status === '在读' && (
-            <Badge className="bg-amber-500/90 backdrop-blur-md border-none text-[10px] h-5 px-1.5">📖 在读</Badge>
-          )}
-        </div>
         
         {isBatchMode && (
           <div className={cn(
-            "absolute inset-0 bg-background/20 backdrop-blur-[1px] flex items-center justify-center transition-opacity",
+            "absolute inset-0 bg-background/20 backdrop-blur-[1px] flex items-center justify-center transition-opacity rounded-md",
             isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
           )}>
             <div className={cn(

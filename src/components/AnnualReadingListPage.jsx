@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import { normalizeCoverUrl } from '../utils/coverUrl';
+import { AnnualBookCover } from './BookCover';
 
 // 每年的主题色配置
 const YEAR_THEMES = {
@@ -150,32 +151,14 @@ const BookDetailDialog = ({ book, open, onClose, theme }) => {
               <>
                 {/* 头部：封面 + 基本信息 */}
                 <div className="flex gap-4 sm:gap-6 mb-6">
-                  {/* 封面 - 使用固定宽高比 */}
+                  {/* 封面 - 使用通用组件 */}
                   <div className="w-24 sm:w-32 md:w-40 flex-shrink-0">
-                    <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
-                      <div className="absolute inset-0 rounded-xl overflow-hidden shadow-xl">
-                        {normalizeCoverUrl(bookInfo.coverUrl) || normalizeCoverUrl(book.coverUrl) ? (
-                          <img
-                            src={normalizeCoverUrl(bookInfo.coverUrl) || normalizeCoverUrl(book.coverUrl)}
-                            alt={bookInfo.title}
-                            className="absolute inset-0 w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div
-                            className="absolute inset-0 flex items-center justify-center"
-                            style={{ background: `linear-gradient(135deg, ${theme.primary}30, ${theme.primary}10)` }}
-                          >
-                            <Book className="w-10 h-10 sm:w-12 sm:h-12" style={{ color: theme.primary, opacity: 0.5 }} />
-                          </div>
-                        )}
-                        {/* 已读badge - 封面右上角 */}
-                        {(bookInfo.status === '已读' || bookInfo.readingProgress >= 100) && (
-                          <div className="absolute top-1.5 right-1.5">
-                            <Badge className="bg-green-500/90 backdrop-blur-md border-none text-[10px] h-5 px-1.5 shadow-lg shadow-green-500/30">✓ 已读</Badge>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <AnnualBookCover
+                      coverUrl={bookInfo.coverUrl || book.coverUrl}
+                      title={bookInfo.title}
+                      isRead={bookInfo.status === '已读' || bookInfo.readingProgress >= 100}
+                      primaryColor={theme.primary}
+                    />
                   </div>
 
                   {/* 信息 */}
@@ -459,29 +442,14 @@ const AnnualReadingListPage = ({ data, onClose }) => {
                 >
                   {/* 新布局：左侧封面 + 右侧内容 */}
                   <div className="flex">
-                    {/* 封面区域 - 固定宽高比 */}
+                    {/* 封面区域 - 使用通用组件 */}
                     <div className="w-24 sm:w-28 md:w-36 flex-shrink-0 p-3 sm:p-4">
-                      <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
-                        <div className="absolute inset-0 rounded-xl overflow-hidden bg-muted shadow-lg group-hover:shadow-xl transition-shadow">
-                          {item.coverUrl ? (
-                            <img
-                              src={normalizeCoverUrl(item.coverUrl)}
-                              alt={item.bookTitle}
-                              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br" style={{ background: `linear-gradient(135deg, ${theme.primary}30, ${theme.primary}10)` }}>
-                              <Book className="w-8 h-8 sm:w-10 sm:h-10" style={{ color: theme.primary, opacity: 0.5 }} />
-                            </div>
-                          )}
-                          {/* 已读badge - 封面右上角 */}
-                          {isBookRead(item.bookTitle) && (
-                            <div className="absolute top-1 right-1">
-                              <Badge className="bg-green-500/90 backdrop-blur-md border-none text-[9px] h-4 px-1 shadow-lg shadow-green-500/30">✓ 已读</Badge>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <AnnualBookCover
+                        coverUrl={item.coverUrl}
+                        title={item.bookTitle}
+                        isRead={isBookRead(item.bookTitle)}
+                        primaryColor={theme.primary}
+                      />
                     </div>
 
                     {/* 内容区域 */}

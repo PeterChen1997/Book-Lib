@@ -12,7 +12,7 @@ import { normalizeCoverUrl } from '../utils/coverUrl';
  * @param {string} props.status - 阅读状态：'已读', '在读', 或其他
  * @param {string} props.readingDate - 阅读日期
  * @param {boolean} props.showReadBadge - 是否显示已读badge（年度书单用）
- * @param {boolean} props.showUnreadBadge - 是否显示在读badge（首页用）
+ * @param {boolean} props.showUnreadBadge - 是否显示未读badge（首页用，已读不显示）
  * @param {string} props.className - 额外的CSS类名
  * @param {string} props.aspectRatio - 宽高比，默认 '3/4.2'
  * @param {string} props.primaryColor - 占位符主色调
@@ -23,7 +23,7 @@ const BookCover = ({
   status,
   readingDate,
   showReadBadge = false,
-  showUnreadBadge = true,
+  showUnreadBadge = false,
   className = '',
   aspectRatio = '3/4.2',
   primaryColor = '#8b5cf6',
@@ -31,9 +31,10 @@ const BookCover = ({
   const normalizedCoverUrl = normalizeCoverUrl(coverUrl);
   const placeholderUrl = 'https://via.placeholder.com/300x420?text=No+Cover';
 
-  // 判断是否显示badge
+  // 判断状态
   const isRead = status === '已读';
   const isReading = status === '在读';
+  const isUnread = !isRead && !isReading;
   const is2025 = readingDate?.startsWith('2025');
 
   return (
@@ -57,15 +58,22 @@ const BookCover = ({
           </Badge>
         )}
         
-        {/* 在读badge - 在 showUnreadBadge 为 true 且不是已读时显示（首页） */}
-        {showUnreadBadge && isReading && (
+        {/* 在读badge - 琥珀色 */}
+        {isReading && (
           <Badge className="bg-amber-500/90 backdrop-blur-md border-none text-[10px] h-5 px-1.5">
             📖 在读
           </Badge>
         )}
         
-        {/* 2025年份badge - 仅在未读且无在读状态时显示 */}
-        {showUnreadBadge && is2025 && !isReading && !isRead && (
+        {/* 未读badge - showUnreadBadge为true且未读时显示（首页用，已读不显示） */}
+        {showUnreadBadge && isUnread && (
+          <Badge className="bg-slate-500/80 backdrop-blur-md border-none text-[10px] h-5 px-1.5">
+            未读
+          </Badge>
+        )}
+        
+        {/* 2025年份badge - 仅在无其他badge时显示 */}
+        {is2025 && !isReading && !isRead && !showUnreadBadge && (
           <Badge className="bg-blue-500/80 backdrop-blur-md border-none text-[10px] h-5 px-1.5">
             2025
           </Badge>

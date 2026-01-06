@@ -646,6 +646,33 @@ const BookFullscreenDetail = ({
             </TabsContent>
           </Tabs>
         </div>
+        {/* Navigation Buttons - Always visible if IDs exist */}
+        {(prevBookId || nextBookId) && (
+          <div className="fixed bottom-36 right-4 md:bottom-24 md:right-8 z-50 flex flex-col gap-3">
+             {prevBookId && (
+               <Button
+                 size="icon"
+                 variant="secondary"
+                 className="w-12 h-12 rounded-full shadow-lg shadow-primary/20 backdrop-blur-md bg-primary/90 text-primary-foreground hover:bg-primary hover:scale-110 active:scale-95 transition-all duration-200 border border-primary-foreground/10"
+                 onClick={() => onNavigate(prevBookId)}
+                 title="上一本"
+               >
+                 <ChevronLeft size={24} />
+               </Button>
+             )}
+             {nextBookId && (
+               <Button
+                 size="icon"
+                 variant="secondary"
+                 className="w-12 h-12 rounded-full shadow-lg shadow-primary/20 backdrop-blur-md bg-primary/90 text-primary-foreground hover:bg-primary hover:scale-110 active:scale-95 transition-all duration-200 border border-primary-foreground/10"
+                 onClick={() => onNavigate(nextBookId)}
+                 title="下一本"
+               >
+                 <ChevronRight size={24} />
+               </Button>
+             )}
+          </div>
+        )}
         <ScrollToTop scrollRef={detailScrollRef} />
       </ScrollArea>
     </motion.div>
@@ -813,6 +840,13 @@ function App() {
     }
   };
 
+  const handleNavigateBook = (id) => {
+    // Navigate while preserving the list context state
+    navigate(`/book/${id}`, {
+      replace: true,
+      state: location.state
+    });
+  };
 
   const toggleSelectBook = (id) => {
     setSelectedBookIds(prev => 
@@ -1027,7 +1061,9 @@ function App() {
                                 isBatchMode={isBatchMode}
                                 isSelected={selectedBookIds.includes(book.id)}
                                 onToggleSelect={toggleSelectBook}
-                                onClick={(b) => navigate(`/book/${b.id}`)} 
+                                onClick={(b) => navigate(`/book/${b.id}`, {
+                                  state: { bookIds: filteredBooks.map(bk => bk.id) }
+                                })}
                               />
                             ))}
                           </div>
@@ -1072,6 +1108,17 @@ function App() {
             importText={importText}
             setImportText={setImportText}
             handleImportNotes={handleImportNotes}
+            prevBookId={(() => {
+              if (!location.state?.bookIds) return null;
+              const idx = location.state.bookIds.indexOf(selectedBook.id);
+              return idx > 0 ? location.state.bookIds[idx - 1] : null;
+            })()}
+            nextBookId={(() => {
+              if (!location.state?.bookIds) return null;
+              const idx = location.state.bookIds.indexOf(selectedBook.id);
+              return idx >= 0 && idx < location.state.bookIds.length - 1 ? location.state.bookIds[idx + 1] : null;
+            })()}
+            onNavigate={handleNavigateBook}
           />
         )}
       </AnimatePresence>

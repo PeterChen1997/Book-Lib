@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Home, Library, Clock, CheckCircle2, Book, Music, FileText, 
-  Search, Plus, MoreHorizontal, ChevronRight, X, Edit3, Save, Trash2, Upload, User,
+  Search, Plus, MoreHorizontal, ChevronRight, ChevronLeft, X, Edit3, Save, Trash2, Upload, User,
   Moon, Sun, Laptop, Star, Menu
 } from 'lucide-react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   HashRouter as Router, 
@@ -289,7 +290,10 @@ const BookFullscreenDetail = ({
   onClose,
   selectedBookNotes,
   handleDeleteNote,
-  isImportingNotes, setIsImportingNotes, importText, setImportText, handleImportNotes
+  isImportingNotes, setIsImportingNotes, importText, setImportText, handleImportNotes,
+  prevBookId,
+  nextBookId,
+  onNavigate
 }) => {
   const detailScrollRef = React.useRef(null);
   if (!book) return null;
@@ -298,11 +302,19 @@ const BookFullscreenDetail = ({
 
   return (
     <motion.div 
-      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden"
     >
       {/* Scrollable Container */}
       <ScrollArea className="flex-1" viewportRef={detailScrollRef}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={book.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
         {/* Hero Section */}
         <div className="relative min-h-[70vh] md:min-h-[500px] w-full overflow-hidden pb-8">
           <div 
@@ -646,6 +658,8 @@ const BookFullscreenDetail = ({
             </TabsContent>
           </Tabs>
         </div>
+          </motion.div>
+        </AnimatePresence>
         {/* Navigation Buttons - Always visible if IDs exist */}
         {(prevBookId || nextBookId) && (
           <div className="fixed bottom-36 right-4 md:bottom-24 md:right-8 z-50 flex flex-col gap-3">
@@ -654,7 +668,10 @@ const BookFullscreenDetail = ({
                  size="icon"
                  variant="secondary"
                  className="w-12 h-12 rounded-full shadow-lg shadow-primary/20 backdrop-blur-md bg-primary/90 text-primary-foreground hover:bg-primary hover:scale-110 active:scale-95 transition-all duration-200 border border-primary-foreground/10"
-                 onClick={() => onNavigate(prevBookId)}
+                 onClick={() => {
+                   detailScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                   onNavigate(prevBookId);
+                 }}
                  title="上一本"
                >
                  <ChevronLeft size={24} />
@@ -665,7 +682,10 @@ const BookFullscreenDetail = ({
                  size="icon"
                  variant="secondary"
                  className="w-12 h-12 rounded-full shadow-lg shadow-primary/20 backdrop-blur-md bg-primary/90 text-primary-foreground hover:bg-primary hover:scale-110 active:scale-95 transition-all duration-200 border border-primary-foreground/10"
-                 onClick={() => onNavigate(nextBookId)}
+                 onClick={() => {
+                   detailScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                   onNavigate(nextBookId);
+                 }}
                  title="下一本"
                >
                  <ChevronRight size={24} />
@@ -1096,7 +1116,7 @@ function App() {
       {/* Fullscreen Detail View */}
       <AnimatePresence>
         {selectedBook && (
-          <BookFullscreenDetail 
+          <BookFullscreenDetail
             book={selectedBook}
             isAdmin={isAdmin}
             onOpenEditor={handleOpenEditorFromDetails}

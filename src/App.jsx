@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { 
   Home, Library, Clock, CheckCircle2, Book, Music, FileText, 
   Search, Plus, MoreHorizontal, ChevronRight, ChevronLeft, X, Edit3, Save, Trash2, Upload, User,
-  Moon, Sun, Laptop, Star, Menu
+  Moon, Sun, Laptop, Star, Menu, Quote
 } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,11 +58,7 @@ const useTheme = () => {
   return { theme, toggleTheme };
 };
 
-const Quote = ({ className }) => (
-  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V4H19.017C20.1216 4 21.017 4.89543 21.017 6V15C21.017 17.2091 19.2261 19 17.017 19H14.017V21H14.017ZM3.01697 21L3.01697 18C3.01697 16.8954 3.9124 16 5.01697 16H8.01697C8.56925 16 9.01697 15.5523 9.01697 15V9C9.01697 8.44772 8.56925 8 8.01697 8H5.01697C3.9124 8 3.01697 7.10457 3.01697 6V4H8.01697C9.12154 4 10.017 4.89543 10.017 6V15C10.017 17.2091 8.22611 19 6.01697 19H3.01697V21H3.01697Z" />
-  </svg>
-);
+
 
 // --- Book Card Component ---
 const BookCard = ({ book, onClick, isBatchMode, isSelected, onToggleSelect }) => {
@@ -592,9 +589,13 @@ const BookFullscreenDetail = ({
                     <div className="relative p-4 md:p-12 ml-4 md:ml-0 bg-muted/20 rounded-xl md:rounded-[3rem] border border-border/50 italic shadow-inner shadow-black/5">
                       <Quote className="absolute -top-3 left-1 md:-top-6 md:-left-6 w-8 h-8 md:w-16 md:h-16 text-primary/10 rotate-180" />
                       <span className="absolute top-3 right-4 md:top-8 md:right-12 text-3xl md:text-6xl font-serif text-primary/5 select-none">评</span>
-                      <p className="text-base md:text-2xl leading-loose whitespace-pre-wrap font-serif relative z-10">
-                        {book.review || "暂未撰写书评。"}
-                      </p>
+                      <div className="text-sm md:text-lg leading-relaxed font-serif relative z-10 prose prose-sm md:prose-lg dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 not-italic">
+                        {book.review ? (
+                          <ReactMarkdown>{book.review}</ReactMarkdown>
+                        ) : (
+                          <p className="italic text-muted-foreground">暂未撰写书评。</p>
+                        )}
+                      </div>
                     </div>
                   </section>
                 </div>

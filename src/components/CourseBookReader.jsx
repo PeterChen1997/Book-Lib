@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronLeft, ChevronRight, GraduationCap, BookOpen, Menu } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ChevronUp, GraduationCap, BookOpen, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
-import { ScrollToTop } from './ui/scroll-to-top';
 import { cn } from '../lib/utils';
 
 const PROGRESS_KEY_PREFIX = 'course-progress:';
@@ -29,6 +28,7 @@ function saveProgress(slug, data) {
 export default function CourseBookReader({ book, onClose }) {
   const [chapterIndex, setChapterIndex] = useState(0);
   const [tocOpen, setTocOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const scrollViewportRef = useRef(null);
   const scrollSaveTimer = useRef(null);
 
@@ -69,21 +69,15 @@ export default function CourseBookReader({ book, onClose }) {
     });
   }, [book.slug, calcPercent]);
 
-  // Save progress on scroll (throttled), attached to the actual viewport element
+  // Save progress on scroll (throttled)
   const handleScroll = useCallback(() => {
+    const scrollTop = scrollViewportRef.current?.scrollTop ?? 0;
+    setShowScrollTop(scrollTop > 300);
     if (scrollSaveTimer.current) clearTimeout(scrollSaveTimer.current);
     scrollSaveTimer.current = setTimeout(() => {
-      const scrollTop = scrollViewportRef.current?.scrollTop ?? 0;
       persistProgress(chapterIndex, scrollTop);
     }, 500);
   }, [chapterIndex, persistProgress]);
-
-  useEffect(() => {
-    const viewport = scrollViewportRef.current;
-    if (!viewport) return;
-    viewport.addEventListener('scroll', handleScroll);
-    return () => viewport.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
 
   const goToChapter = useCallback((idx) => {
     setChapterIndex(idx);
@@ -92,18 +86,12 @@ export default function CourseBookReader({ book, onClose }) {
     persistProgress(idx, 0);
   }, [persistProgress]);
 
-  useEffect(() => {
-    scrollViewportRef.current?.scrollTo({ top: 0, behavior: 'instant' });
-    persistProgress(chapterIndex, 0);
-  }, [chapterIndex, persistProgress]);
-
   const savedProgress = loadProgress(book.slug);
   const percent = savedProgress?.percent ?? 0;
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden"
     >
@@ -187,6 +175,7 @@ export default function CourseBookReader({ book, onClose }) {
         <ScrollArea
           className="flex-1"
           viewportRef={scrollViewportRef}
+          onViewportScroll={handleScroll}
         >
           <div className="max-w-3xl mx-auto px-4 md:px-10 py-8 md:py-14 pb-32">
             {currentChapter ? (
@@ -197,7 +186,7 @@ export default function CourseBookReader({ book, onClose }) {
                   </span>
                   {currentChapter.title}
                 </h1>
-                <div className="prose prose-base md:prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-bold prose-p:leading-relaxed prose-p:text-foreground/90">
+                <div className="prose prose-base md:prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-headings:font-bold prose-headings:text-foreground prose-p:leading-relaxed prose-p:text-foreground/90 prose-strong:text-foreground prose-a:text-foreground/70">
                   <ReactMarkdown>{currentChapter.content}</ReactMarkdown>
                 </div>
               </>
@@ -209,7 +198,7 @@ export default function CourseBookReader({ book, onClose }) {
             )}
           </div>
 
-          {/* Chapter navigation */}
+          {/* Chapter navigation + scroll to top */}
           <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-10">
             {chapterIndex > 0 && (
               <Button
@@ -231,9 +220,26 @@ export default function CourseBookReader({ book, onClose }) {
                 <ChevronRight size={22} />
               </Button>
             )}
+            <AnimatePresence>
+              {showScrollTop && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Button
+                    size="icon"
+                    className="w-12 h-12 rounded-full shadow-lg bg-primary/90 text-primary-foreground hover:bg-primary hover:scale-110 active:scale-95 transition-all"
+                    onClick={() => scrollViewportRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+                    title="回到顶部"
+                  >
+                    <ChevronUp size={22} />
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-
-          <ScrollToTop scrollRef={scrollViewportRef} />
         </ScrollArea>
       </div>
     </motion.div>

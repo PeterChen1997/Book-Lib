@@ -590,7 +590,7 @@ const BookFullscreenDetail = ({
                     <div className="relative p-4 md:p-12 ml-4 md:ml-0 bg-muted/20 rounded-xl md:rounded-[3rem] border border-border/50 italic shadow-inner shadow-black/5">
                       <Quote className="absolute -top-3 left-1 md:-top-6 md:-left-6 w-8 h-8 md:w-16 md:h-16 text-primary/10 rotate-180" />
                       <span className="absolute top-3 right-4 md:top-8 md:right-12 text-3xl md:text-6xl font-serif text-primary/5 select-none">评</span>
-                      <div className="text-sm md:text-lg leading-relaxed font-serif relative z-10 prose prose-sm md:prose-lg dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 not-italic">
+                      <div className="text-sm md:text-lg leading-relaxed font-serif relative z-10 prose prose-sm md:prose-lg dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3 prose-headings:text-foreground prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-strong:text-foreground prose-a:text-foreground/70 not-italic">
                         {book.review ? (
                           <ReactMarkdown>{book.review}</ReactMarkdown>
                         ) : (
@@ -1009,7 +1009,7 @@ function App() {
             <>
               <Separator className="my-2" />
               <p className="px-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">课程书籍</p>
-              <ScrollArea className="h-[120px]">
+              <div className="space-y-0.5">
                 {courseBooks.map(cb => (
                   <Button
                     key={cb.slug}
@@ -1021,7 +1021,7 @@ function App() {
                     <span className="truncate">{cb.title}</span>
                   </Button>
                 ))}
-              </ScrollArea>
+              </div>
             </>
           )}
         </nav>

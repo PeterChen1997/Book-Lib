@@ -69,7 +69,7 @@ export default function CourseBookReader({ book, onClose }) {
     });
   }, [book.slug, calcPercent]);
 
-  // Save progress on scroll (throttled)
+  // Save progress on scroll (throttled), attached to the actual viewport element
   const handleScroll = useCallback(() => {
     if (scrollSaveTimer.current) clearTimeout(scrollSaveTimer.current);
     scrollSaveTimer.current = setTimeout(() => {
@@ -77,6 +77,13 @@ export default function CourseBookReader({ book, onClose }) {
       persistProgress(chapterIndex, scrollTop);
     }, 500);
   }, [chapterIndex, persistProgress]);
+
+  useEffect(() => {
+    const viewport = scrollViewportRef.current;
+    if (!viewport) return;
+    viewport.addEventListener('scroll', handleScroll);
+    return () => viewport.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   const goToChapter = useCallback((idx) => {
     setChapterIndex(idx);
@@ -180,7 +187,6 @@ export default function CourseBookReader({ book, onClose }) {
         <ScrollArea
           className="flex-1"
           viewportRef={scrollViewportRef}
-          onScroll={handleScroll}
         >
           <div className="max-w-3xl mx-auto px-4 md:px-10 py-8 md:py-14 pb-32">
             {currentChapter ? (

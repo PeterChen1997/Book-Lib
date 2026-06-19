@@ -436,6 +436,53 @@ app.get('/api/annual-lists/:year', (req, res) => {
   }
 });
 
+// --- 课程书籍相关接口 ---
+
+// 加载所有课程书籍
+const loadCourseBooks = () => {
+  const dataDir = path.join(__dirname, 'data/course-books');
+  const books = {};
+  try {
+    if (!fs.existsSync(dataDir)) return books;
+    const files = fs.readdirSync(dataDir).filter(f => f.endsWith('.json'));
+    for (const file of files) {
+      try {
+        const data = fs.readFileSync(path.join(dataDir, file), 'utf8');
+        const book = JSON.parse(data);
+        if (book.slug) books[book.slug] = book;
+      } catch (err) {
+        console.error(`Failed to load course book ${file}:`, err);
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load course books:', err);
+  }
+  return books;
+};
+
+// 获取课程书籍列表
+app.get('/api/course-books', (req, res) => {
+  const books = loadCourseBooks();
+  const list = Object.values(books).map(book => ({
+    slug: book.slug,
+    title: book.title,
+    chapterCount: book.chapters?.length || 0,
+    generatedAt: book.generatedAt
+  }));
+  res.json(list);
+});
+
+// 获取单本课程书籍详情（含章节内容）
+app.get('/api/course-books/:slug', (req, res) => {
+  const { slug } = req.params;
+  const books = loadCourseBooks();
+  if (books[slug]) {
+    res.json(books[slug]);
+  } else {
+    res.status(404).json({ success: false, message: `No course book found for slug: ${slug}` });
+  }
+});
+
 // 初始化 Mock 数据
 const initMock = () => {
   const count = db.prepare('SELECT count(*) as count FROM books').get();

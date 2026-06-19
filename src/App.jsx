@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { 
-  Home, Library, Clock, CheckCircle2, Book, Music, FileText, 
+import {
+  Home, Library, Clock, CheckCircle2, Book, Music, FileText,
   Search, Plus, MoreHorizontal, ChevronRight, ChevronLeft, X, Edit3, Save, Trash2, Upload, User,
-  Moon, Sun, Laptop, Star, Menu, Quote
+  Moon, Sun, Laptop, Star, Menu, Quote, GraduationCap
 } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,6 +33,7 @@ import { cn } from './lib/utils';
 import { ScrollToTop } from './components/ui/scroll-to-top';
 import AnnualReadingListBanner from './components/AnnualReadingListBanner';
 import AnnualReadingListPage from './components/AnnualReadingListPage';
+import CourseBookReader from './components/CourseBookReader';
 import BookCover from './components/BookCover';
 import { normalizeCoverUrl } from './utils/coverUrl';
 
@@ -719,8 +720,10 @@ function App() {
   const bookId = isBookRoute ? pathParts[1] : null;
   const isYearRoute = pathParts[0] === 'year';
   const isAnnualListRoute = pathParts[0] === 'annual-list'; // Added
+  const isCourseRoute = pathParts[0] === 'course';
   const activeTab = isYearRoute ? pathParts[1] : (isBookRoute ? 'All' : 'All');
   const annualListYear = isAnnualListRoute ? pathParts[1] : null; // Added
+  const courseSlug = isCourseRoute ? pathParts[1] : null;
 
   const [books, setBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -738,6 +741,8 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [annualLists, setAnnualLists] = useState([]);
   const [selectedAnnualList, setSelectedAnnualList] = useState(null);
+  const [courseBooks, setCourseBooks] = useState([]);
+  const [selectedCourseBook, setSelectedCourseBook] = useState(null);
   const mainScrollRef = useRef(null);
 
   const fetchBooks = async () => {
@@ -780,6 +785,26 @@ function App() {
 
   useEffect(() => { fetchAnnualLists(); }, []);
 
+  const fetchCourseBooks = async () => {
+    try {
+      const res = await fetch(`${API_URL}/course-books`);
+      const data = await res.json();
+      setCourseBooks(data);
+    } catch (err) { console.error('Failed to fetch course books', err); }
+  };
+
+  const fetchCourseBookDetail = async (slug) => {
+    try {
+      const res = await fetch(`${API_URL}/course-books/${slug}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedCourseBook(data);
+      }
+    } catch (err) { console.error('Failed to fetch course book detail', err); }
+  };
+
+  useEffect(() => { fetchCourseBooks(); }, []);
+
   useEffect(() => {
     if (bookId && books.length > 0) {
       const book = books.find(b => b.id.toString() === bookId);
@@ -801,6 +826,14 @@ function App() {
       setSelectedAnnualList(null);
     }
   }, [annualListYear]);
+
+  useEffect(() => {
+    if (courseSlug) {
+      fetchCourseBookDetail(courseSlug);
+    } else {
+      setSelectedCourseBook(null);
+    }
+  }, [courseSlug]);
 
   const handleSave = async (formData, id) => {
     const url = id ? `${API_URL}/books/${id}` : `${API_URL}/books`;
@@ -912,6 +945,7 @@ function App() {
         <Route path="/year/:year" element={<div />} />
         <Route path="/book/:bookId" element={<div />} />
         <Route path="/annual-list/:year" element={<div />} />
+        <Route path="/course/:slug" element={<div />} />
       </Routes>
       <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans select-none">
       {/* Mobile Sidebar Overlay */}
@@ -932,7 +966,7 @@ function App() {
         "w-72 border-r bg-muted/20 flex flex-col p-6 backdrop-blur-3xl transition-all duration-300 z-50",
         // Desktop: normal flow, hidden when book detail is open
         "hidden md:flex",
-        (selectedBook || selectedAnnualList) && "md:-translate-x-full md:absolute", // Modified
+        (selectedBook || selectedAnnualList || selectedCourseBook) && "md:-translate-x-full md:absolute", // Modified
         // Mobile: fixed drawer
         sidebarOpen && "!fixed !flex inset-y-0 left-0"
       )}>
@@ -959,18 +993,37 @@ function App() {
           </Button>
           <Separator className="my-2" />
           <p className="px-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">年份检索</p>
-          <ScrollArea className="h-[300px]">
+          <ScrollArea className="h-[200px]">
             {availableYears.map(year => (
-              <Button 
+              <Button
                 key={year}
-                variant={activeTab === year ? "secondary" : "ghost"} 
-                className="w-full justify-start gap-3 h-10" 
+                variant={activeTab === year ? "secondary" : "ghost"}
+                className="w-full justify-start gap-3 h-10"
                 onClick={() => { navigate(`/year/${year}`); setSidebarOpen(false); }}
               >
                 <Clock size={18} /> {year} 年
               </Button>
             ))}
           </ScrollArea>
+          {courseBooks.length > 0 && (
+            <>
+              <Separator className="my-2" />
+              <p className="px-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">课程书籍</p>
+              <ScrollArea className="h-[120px]">
+                {courseBooks.map(cb => (
+                  <Button
+                    key={cb.slug}
+                    variant={courseSlug === cb.slug ? "secondary" : "ghost"}
+                    className="w-full justify-start gap-3 h-10 text-left"
+                    onClick={() => { navigate(`/course/${cb.slug}`); setSidebarOpen(false); }}
+                  >
+                    <GraduationCap size={18} />
+                    <span className="truncate">{cb.title}</span>
+                  </Button>
+                ))}
+              </ScrollArea>
+            </>
+          )}
         </nav>
 
         <div className="mt-auto pt-4 border-t space-y-4">
@@ -1151,6 +1204,19 @@ function App() {
             data={selectedAnnualList}
             onClose={() => {
               setSelectedAnnualList(null);
+              handleModalClose();
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Course Book Reader */}
+      <AnimatePresence>
+        {selectedCourseBook && (
+          <CourseBookReader
+            book={selectedCourseBook}
+            onClose={() => {
+              setSelectedCourseBook(null);
               handleModalClose();
             }}
           />
